@@ -326,46 +326,39 @@ sources:
   - id: chili_bangladesh_mendeley
     crop: chili
     role: known
-    enabled: false
-    fetch: {method: manual, url: https://data.mendeley.com/datasets/w9mr3vf56s}
+    fetch: {method: manual, url: https://data.mendeley.com/datasets/w9mr3vf56s/1}
     origin: {country: BD, capture: field}
-    license: "verify on Mendeley"
-    citation: "Chili Plant Leaf Disease and Growth Stage Dataset from Bangladesh. Mendeley Data w9mr3vf56s"
+    license: CC BY 4.0
+    citation: "Chili Plant Leaf Disease and Growth Stage Dataset from Bangladesh. Mendeley Data w9mr3vf56s (v1), file 'Chili Leaf Disease Original Dataset.zip' (sha256 ccb3e216...); the same file is also published as ymt8k9bjkn (Krishna River Basin, India)"
     use_in_paper: true
-    notes: "Enable after download; confirm folder names match label_map."
+    notes: "Original (non-augmented) release only; 1,856 images in 6 folders."
     label_map:
       Bacterial Spot: bacterial_spot
+      Cercospora Leaf Spot: leaf_spot
       Curl Virus: leaf_curl
-      Cercospora Leaf Spot: leaf_spot
+      Healthy Leaf: healthy
       Nutrition Deficiency: nutrient_deficiency
-      White Spot: null
-      Healthy: healthy
+      White spot: white_spot   # unknown_eval: only source of this disorder
 
-  - id: chili_india_4class_mendeley
+  - id: chili_bd_8814
     crop: chili
     role: known
-    enabled: false
-    fetch: {method: manual, url: https://data.mendeley.com/datasets/tm3v4zmh7c}
-    license: "verify on Mendeley"
-    citation: "Chilli Leaf Disease Image Dataset for Classification and Early Diagnosis. Mendeley Data tm3v4zmh7c"
+    fetch: {method: manual, url: https://data.mendeley.com/datasets/tm3v4zmh7c/1}
+    origin: {country: BD, capture: field}
+    license: CC BY 4.0
+    citation: "Chilli Leaf Disease Image Dataset for Classification and Early Diagnosis in Agriculture. Mendeley Data tm3v4zmh7c (v1): 8,814 field images, 1000x1000, Ashulia/Narsingdi/Cumilla/Feni/Noakhali/Laksham"
     use_in_paper: true
-    notes: "Enable after download; confirm folder names match label_map."
     label_map:
-      Anthracnose: anthracnose
-      Cercospora Leaf Spot: leaf_spot
-      Leaf Curl Disease: leaf_curl
-      Fresh Leaf: healthy
+      Bacterial_Spot: bacterial_spot
+      Cercospora_Leaf_Spot: leaf_spot
+      Curl_Virus: leaf_curl
+      Healthy_Leaf: healthy
+      Nutrition_Deficiency: nutrient_deficiency
+      Powdery_Mildew: powdery_mildew
 
-  - id: chili_krishna_mendeley
-    crop: chili
-    role: known
-    enabled: false
-    fetch: {method: manual, url: https://data.mendeley.com/datasets/ymt8k9bjkn}
-    license: "verify on Mendeley"
-    citation: "Image Dataset on Chili Leaf Diseases in the Krishna River Basin. Mendeley Data ymt8k9bjkn"
-    use_in_paper: true
-    notes: "Enable after download; fill label_map from its folder names."
-    label_map: {}
+  # ymt8k9bjkn ("Krishna River Basin, India", v3) ships the byte-identical file
+  # "Chili Leaf Disease Original Dataset.zip" (sha256 ccb3e216...) as w9mr3vf56s ("from Bangladesh").
+  # It is used once, as chili_bangladesh_mendeley; the conflicting country claims are noted in the paper.
 
   # ------------------------------------------------------------------ LEGACY (Govi Isuru v1)
   - id: legacy_tea

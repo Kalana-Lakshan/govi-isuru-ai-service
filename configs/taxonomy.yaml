@@ -69,7 +69,7 @@ crops:
       nutrient_deficiency: {type: abiotic, status: known, en: Nutrient deficiency}
       yellow_leaf_virus:   {type: viral,   status: known, en: Yellow leaf (virus)}
       bacterial_spot:      {type: bacterial, status: known, en: Bacterial spot}
-      anthracnose:         {type: fungal,  status: known, en: Anthracnose}
       # Real Capsicum disorders absent from the training set -> unknown-disease evaluation.
       broad_bean_wilt_virus: {type: viral,   status: unknown_eval, en: BBWV2 infection}
       flood_stress:          {type: abiotic, status: unknown_eval, en: Flood / overwatering stress}
+      white_spot:            {type: fungal,  status: unknown_eval, en: White spot}
