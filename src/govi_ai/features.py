@@ -61,7 +61,7 @@ def extract(model, paths: Sequence[Path], mean, std, *, img_size: int = 224, bat
 
 def save_features(path: Path, feats: np.ndarray, sample_ids: Sequence[str], meta: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(path, feats=feats, sample_ids=np.asarray(sample_ids), **{f"meta_{k}": v for k, v in meta.items()})
+    np.savez(path, feats=feats, sample_ids=np.asarray(sample_ids, dtype=str), **{f"meta_{k}": v for k, v in meta.items()})
 
 
 def load_features(feature_dir: Path, keys: Sequence[str], sample_ids: Sequence[str]) -> np.ndarray:

@@ -62,7 +62,7 @@ class Mahalanobis:
         return np.concatenate([-self.distances(feats[i:i + chunk]).min(1) for i in range(0, len(feats), chunk)])
 
 
-def knn_score(train_feats: np.ndarray, feats: np.ndarray, k: int = 10, chunk: int = 2048) -> np.ndarray:
+def knn_score(train_feats: np.ndarray, feats: np.ndarray, k: int = 10, chunk: int = 1024) -> np.ndarray:
     """Deep kNN (Sun et al. 2022): cosine similarity to the k-th nearest training feature."""
     tr = train_feats / (np.linalg.norm(train_feats, axis=1, keepdims=True) + 1e-8)
     out = []
