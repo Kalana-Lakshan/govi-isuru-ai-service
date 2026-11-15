@@ -58,11 +58,26 @@ def _load_officer_prototypes(eng: Engine) -> int:
     return len(entries)
 
 
+_yield: dict = {}
+
+
+def _load_yield() -> dict:
+    """Optional yield files (bundle/yield/*.json from scripts/train_yield.py)."""
+    d = BUNDLE_DIR / "yield"
+    if not (d / "forecasts.json").exists():
+        return {}
+    f = json.loads((d / "forecasts.json").read_text(encoding="utf-8"))
+    h = json.loads((d / "history.json").read_text(encoding="utf-8")) if (d / "history.json").exists() else {}
+    index = {(r["district"], r["season"]): r for r in f["forecasts"]}
+    return {"meta": {k: v for k, v in f.items() if k != "forecasts"}, "forecasts": index, "history": h.get("history", {})}
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _engine
+    global _engine, _yield
     _engine = Engine(BUNDLE_DIR, threads=THREADS)
     app.state.officer_prototypes = _load_officer_prototypes(_engine)
+    _yield = _load_yield()
     yield
     _engine = None
 
@@ -146,6 +161,43 @@ def predict(file: UploadFile = File(...), crop: str | None = Query(default=None,
             return e.predict(data, crop=crop, heatmap=heatmap)
     except InvalidImage as err:
         raise HTTPException(400, str(err)) from err
+
+
+def _yield_data() -> dict:
+    if not _yield:
+        raise HTTPException(503, "yield model not available in this bundle")
+    return _yield
+
+
+@app.get("/v1/yield/districts", dependencies=[Depends(require_key)])
+def yield_districts() -> dict:
+    y = _yield_data()
+    return {"districts": sorted({d for d, _ in y["forecasts"]}), "seasons": ["maha", "yala"], **y["meta"]}
+
+
+@app.get("/v1/yield/forecast", dependencies=[Depends(require_key)])
+def yield_forecast(district: str, season: Literal["maha", "yala"],
+                   area_ha: float | None = Query(default=None, gt=0, le=100_000)) -> dict:
+    """Next-season paddy yield for a district (official DCS data, 5-year climatology + calibrated 80 % interval).
+    With ``area_ha`` the expected harvest in kg is returned as well."""
+    y = _yield_data()
+    r = y["forecasts"].get((district.strip().upper(), season))
+    if r is None:
+        raise HTTPException(404, f"no forecast for {district}/{season}")
+    out = {**r, **y["meta"]}
+    if area_ha is not None:
+        out["expected_harvest_kg"] = {k: round(v * area_ha) for k, v in r["yield_kg_ha"].items()}
+    return out
+
+
+@app.get("/v1/yield/history", dependencies=[Depends(require_key)])
+def yield_history(district: str, season: Literal["maha", "yala"] | None = None) -> dict:
+    y = _yield_data()
+    h = y["history"].get(district.strip().upper())
+    if h is None:
+        raise HTTPException(404, f"unknown district {district}")
+    return {"district": district.strip().upper(), "history": {season: h.get(season, {})} if season else h,
+            "unit": "kg per net hectare"}
 
 
 @app.post("/v1/disease/prototypes", dependencies=[Depends(require_key)])

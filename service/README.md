@@ -24,6 +24,9 @@ Officer-registered prototypes are written to `/app/state`; mount a volume there 
 | GET | `/v1/metadata` | classes per crop, officer-added classes, statuses |
 | POST | `/v1/disease/predict?crop=rice&heatmap=true` | multipart `file`; returns one of the statuses below |
 | POST | `/v1/disease/prototypes` | officer-verified new disease: `{crop, label, embeddings_f16_base64[]}` |
+| GET | `/v1/yield/districts` | districts with forecasts |
+| GET | `/v1/yield/forecast?district=&season=maha\|yala&area_ha=` | next-season paddy yield (p10/p50/p90 kg/ha, 80 % interval) and expected harvest |
+| GET | `/v1/yield/history?district=&season=` | observed DCS yields per year |
 
 Statuses: `KNOWN_DISEASE`, `UNKNOWN_DISEASE` (includes `embedding_f16_base64` for officer review),
 `LOW_CONFIDENCE`, `WRONG_CROP` (with `detected_crop`), `UNSUPPORTED_PLANT`, `NOT_A_PLANT`.

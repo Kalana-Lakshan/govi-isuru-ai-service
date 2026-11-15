@@ -75,7 +75,11 @@ All results are reported over 3 seeds, with McNemar or Wilcoxon tests where mode
 
 ## 6. Tabular models (phase 7, real data only)
 
-- **Yield:** DCS district × season paddy statistics (data.gov.lk CSVs 1952–2012, plus later DCS tables), joined
-  with NASA POWER / CHIRPS weather. LightGBM, trained on earlier years and tested on later ones, with quantile intervals.
+- **Yield (done):** official DCS district × season statistics, 1978/79 Maha – 2026 (statistics.gov.lk Excel series;
+  data.gov.lk's certificate had expired). Rolling-origin backtest 2010–2026 (795 district-seasons):
+  5-year climatology MAE 436 kg/ha (12.0 %), gradient-boosted model on sowing-time features 446 (12.2 %),
+  last-year baseline 493 (13.5 %). Without in-season weather nothing beats climatology, so the service returns
+  the 5-year mean with an empirically calibrated 80 % interval (79.5 % backtest coverage). Next step: in-season
+  weather (NASA POWER / CHIRPS) for mid-season updates.
 - **Suitability:** a knowledge-based scoring model following FAO land evaluation. Crop requirement ranges come from
   FAO ECOCROP (GAEZ v4), with soil data from SoilGrids and climate from NASA POWER. Every score comes with its reasons.

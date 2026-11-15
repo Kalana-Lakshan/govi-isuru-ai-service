@@ -101,6 +101,11 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
     bundle, _ = bundle_dir
+    (bundle / "yield").mkdir(exist_ok=True)
+    (bundle / "yield" / "forecasts.json").write_text(json.dumps({"unit": "kg per net hectare", "forecasts": [
+        {"district": "POLONNARUWA", "season": "maha", "year": 2027, "method": "climatology_5yr_mean",
+         "yield_kg_ha": {"p10": 4000, "p50": 4600, "p90": 5500}}]}))
+    (bundle / "yield" / "history.json").write_text(json.dumps({"history": {"POLONNARUWA": {"maha": {"2026": 6095}}}}))
     monkeypatch.setenv("GOVI_BUNDLE_DIR", str(bundle))
     monkeypatch.setenv("GOVI_STATE_DIR", str(tmp_path / "state"))
     monkeypatch.setenv("GOVI_API_KEY", "test-key")
@@ -132,3 +137,9 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
         assert (tmp_path / "state" / "officer_prototypes.json").exists()
         assert client.post("/v1/disease/prototypes", headers=h,
                            json={"crop": "rice", "label": "Bad Label", "embeddings_f16_base64": [emb]}).status_code == 422
+
+        r = client.get("/v1/yield/forecast?district=polonnaruwa&season=maha&area_ha=2", headers=h).json()
+        assert r["yield_kg_ha"]["p50"] == 4600 and r["expected_harvest_kg"]["p50"] == 9200
+        assert client.get("/v1/yield/forecast?district=nowhere&season=maha", headers=h).status_code == 404
+        assert client.get("/v1/yield/history?district=Polonnaruwa", headers=h).json()["history"]["maha"]["2026"] == 6095
+        assert "POLONNARUWA" in client.get("/v1/yield/districts", headers=h).json()["districts"]
