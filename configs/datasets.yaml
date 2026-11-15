@@ -1,0 +1,422 @@
+# Registry of every image source used to build the harmonised dataset.
+#
+# Rules (enforced by govi_ai.data.registry):
+#   * No synthetic or generated images. Only real photographs.
+#   * Never use a source's "augmented" release: augmented copies leak near-duplicates
+#     across splits. HF sources with both configs are pinned to `raw`.
+#   * label_map maps each source label -> unified class id from taxonomy.yaml, or null to drop
+#     it (ambiguous / mixed labels). Matching ignores case, spaces, '_' and '-'.
+#   * Sources with role other_plant / non_plant use label_map "*" (keep everything).
+#   * use_in_paper: false marks data whose provenance or licence can't be cited; it can be used
+#     to train the deployed model but is excluded from every reported paper number.
+#
+# fetch.method:
+#   hf     - Hugging Face dataset (streamed; only the images we keep are written to disk)
+#   manual - download the archive yourself (Mendeley etc.), unzip under data/raw/<id>/,
+#            laid out as <class folder>/<images> (nested folders are fine)
+#   local  - a folder you already have (e.g. the legacy Govi Isuru datasets)
+#   coco   - COCO val2017 images minus any image containing plants/vegetables/fruit
+
+defaults:
+  max_side: 640          # stored images are downscaled to this (training uses <= 384)
+  jpeg_quality: 95
+
+sources:
+  # ------------------------------------------------------------------ RICE
+  - id: paddy_doctor
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/paddy_disease_classification}
+    origin: {country: IN, capture: field}
+    license: "CC BY 4.0 (IEEE DataPort) - verify"
+    citation: "Petchiammal et al. (2022). Paddy Doctor. IEEE DataPort. doi:10.21227/hz4v-af08"
+    use_in_paper: true
+    label_map:
+      bacterial_leaf_blight: bacterial_leaf_blight
+      bacterial_leaf_streak: bacterial_leaf_streak
+      bacterial_panicle_blight: bacterial_panicle_blight
+      blast: blast
+      brown_spot: brown_spot
+      dead_heart: dead_heart
+      downy_mildew: downy_mildew
+      hispa: hispa
+      normal: healthy
+      tungro: tungro
+
+  - id: rice_rlbf
+    # The legacy Govi Isuru rice dataset (same 8 classes, ~1.7k images) is this dataset.
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/rice_leaf_bacterial_fungal, config: raw}
+    origin: {country: BD, capture: field}
+    license: CC BY 4.0
+    citation: "Hasan, M. (2023). Rice Leaf Bacterial and Fungal Disease Dataset. Mendeley Data. doi:10.17632/hx6f852hw4.2"
+    use_in_paper: true
+    label_map:
+      Bacterial Leaf Blight: bacterial_leaf_blight
+      Brown Spot: brown_spot
+      Healthy Rice Leaf: healthy
+      Leaf Blast: blast
+      Leaf scald: leaf_scald
+      Narrow Brown Leaf Spot: narrow_brown_leaf_spot
+      Rice Hispa: hispa
+      Sheath Blight: sheath_blight
+
+  - id: rice_sethy_india
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/rice_leaf_disease_classification_india}
+    origin: {country: IN, capture: field}
+    license: CC BY 4.0
+    citation: "Sethy et al. (2020). Comput. Electron. Agric. 175:105527; Mendeley Data doi:10.17632/fwcj7stb8r.2"
+    use_in_paper: true
+    label_map:
+      Bacterialblight: bacterial_leaf_blight
+      Blast: blast
+      Brownspot: brown_spot
+      Tungro: tungro
+
+  - id: rice_bangladesh
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/rice_disease_classification_bangladesh, config: raw}
+    origin: {country: BD, capture: field}
+    license: CC BY 4.0
+    citation: "Project-AgML/rice_disease_classification_bangladesh (see dataset card for the original citation)"
+    use_in_paper: true
+    label_map:
+      Healthy: healthy
+      Insect: null          # generic, not a single disorder
+      Leaf Scald: leaf_scald
+      Rice: null            # 16 images, undefined label
+      Rice Blast: blast
+      Rice Leaffolder: leaffolder
+      Rice Stripes: null    # ambiguous (stripe virus vs. streak)
+      Rice Tungro: tungro
+
+  - id: dhan_shomadhan
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/Dhan-Shomadhan_rice_leaf_disease_classification}
+    origin: {country: BD, capture: field+white_background}
+    license: CC BY 4.0
+    citation: "Hossain et al. (2021). Dhan-Shomadhan. Mendeley Data. doi:10.17632/znsxdctwtt.1"
+    use_in_paper: true
+    label_map:          # the source contains spelling variants of the same classes
+      Brown Spot: brown_spot
+      Browon Spot: brown_spot
+      Leaf Scaled: leaf_scald
+      Rice Blast: blast
+      Rice Tungro: tungro
+      Rice Turgro: tungro
+      Shath Blight: sheath_blight
+      Sheath Blight: sheath_blight
+
+  - id: rice_shakeel_zenodo
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/rice_leaf_disease_classification_2}
+    origin: {country: PK, capture: unknown}
+    license: CC BY 4.0
+    citation: "Shakeel, U. (2025). Rice Leaf Disease. Zenodo. doi:10.5281/zenodo.15817084"
+    use_in_paper: true
+    notes: "Perfectly balanced (638/class); may contain augmented copies -> relies on dedupe."
+    label_map:
+      Bacterial leaf blight: bacterial_leaf_blight
+      Brown spot: brown_spot
+      Leaf Blast: blast
+
+  - id: uci_rice
+    crop: rice
+    role: known
+    fetch: {method: hf, repo: Project-AgML/uci_rice_leaf_diseases_classification}
+    origin: {country: IN, capture: white_background}
+    license: CC BY 4.0
+    citation: "Prajapati et al. (2017). Intelligent Decision Technologies 11(3):357-373"
+    use_in_paper: true
+    label_map:
+      bacterial_leaf_blight: bacterial_leaf_blight
+      brown_spot: brown_spot
+      leaf_smut: leaf_smut   # unknown_eval class
+
+  - id: rice_bd_iot
+    crop: rice
+    role: known
+    enabled: false
+    fetch: {method: hf, repo: Project-AgML/rice_leaf_disease_classification_bd}
+    license: CC BY 4.0
+    citation: "eimran (2026). IoT-RiceMobileNet v1.0.0. Zenodo. doi:10.5281/zenodo.21140529"
+    use_in_paper: false
+    notes: "Disabled: class set mirrors RLBF; likely a re-packaged subset of it."
+    label_map: {}
+
+  - id: rice_kaggle_anshulm257
+    crop: rice
+    role: known
+    enabled: false
+    fetch: {method: hf, repo: Project-AgML/rice_leaf_disease_classification}
+    license: unknown
+    citation: "kaggle.com/datasets/anshulm257/rice-disease-dataset"
+    use_in_paper: false
+    notes: "Disabled: no licence; ~630 images/class suggests augmentation."
+    label_map: {}
+
+  # ------------------------------------------------------------------ TEA
+  - id: tealeafbd
+    crop: tea
+    role: known
+    fetch: {method: hf, repo: Project-AgML/teaLeafBD_disease_classification}
+    origin: {country: BD, capture: field}
+    license: CC BY 4.0
+    citation: "Alam et al. (2025). teaLeafBD. Data in Brief. Mendeley Data doi:10.17632/744vznw5k2.4"
+    use_in_paper: true
+    label_map:
+      Brown Blight: brown_blight
+      Gray Blight: gray_blight
+      Green mirid bug: green_mirid_bug
+      Healthy leaf: healthy
+      Helopeltis: helopeltis
+      Red spider: red_spider_mite
+      Tea algal leaf spot: algal_leaf_spot
+
+  - id: csd_assam
+    # Main source of blister blight, the most important tea disease in Sri Lanka.
+    # The HF mirror (80k images, 13.5k/class) appears to be augmented; use the original.
+    crop: tea
+    role: known
+    fetch:
+      method: manual
+      url: https://data.mendeley.com/datasets/94fzcdz8gz/1
+    origin: {country: IN, capture: field}
+    license: CC BY 4.0
+    citation: "Gupta et al. (2025). CS-D: tea leaf disease dataset from Assam. Data in Brief 112251. doi:10.17632/94fzcdz8gz.1"
+    use_in_paper: true
+    label_map:
+      Blister_Blight: blister_blight
+      Brown_Blight: brown_blight
+      Healthy_leaves: healthy
+      Healthy: healthy
+      Leaf_Red_Rust: red_rust
+      Red_Rust: red_rust
+      Red_Spider_Mite: red_spider_mite
+      Tea_Mosquito_Bug: helopeltis
+
+  - id: csd_assam_hf
+    crop: tea
+    role: known
+    enabled: false
+    fetch: {method: hf, repo: Project-AgML/CS-D_tea_leaf_disease_classification}
+    license: CC BY 4.0
+    citation: "Same as csd_assam"
+    use_in_paper: true
+    max_per_class: 1500
+    notes: "Fallback only if the Mendeley original is unavailable; dedupe must collapse augmentations."
+    label_map:
+      Blister_Blight: blister_blight
+      Brown_Blight: brown_blight
+      Healthy_leaves: healthy
+      Leaf_Red_Rust: red_rust
+      Red_Spider_Mite: red_spider_mite
+      Tea_Mosquito_Bug: helopeltis
+
+  - id: tea_balasundaram
+    crop: tea
+    role: known
+    fetch: {method: hf, repo: Project-AgML/tea_leaf_disease_classification}
+    origin: {country: IN, capture: unknown}
+    license: CC BY-NC 4.0
+    citation: "Balasundaram et al. (2025). Results in Engineering 25:103784"
+    use_in_paper: true
+    notes: "Non-commercial licence; very small files (~5 KB/image) -> low resolution."
+    label_map:
+      algal_spot: algal_leaf_spot
+      brown_blight: brown_blight
+      gray_blight: gray_blight
+      healthy: healthy
+      helopeltis: helopeltis
+      red_spot: red_leaf_spot
+
+  - id: tea_bormon
+    crop: tea
+    role: known
+    fetch: {method: hf, repo: Project-AgML/tea_leaf_disease_classification_bangladesh}
+    origin: {country: BD, capture: field}
+    license: CC BY 4.0
+    citation: "Bormon et al. (2025). Data in Brief 59:111379. Mendeley Data doi:10.17632/tt2smzrzrs.4"
+    use_in_paper: true
+    label_map:
+      Healthy: healthy
+      Tea leaf blight: null       # ambiguous (brown vs grey blight)
+      Tea red leaf spot: red_leaf_spot
+      Tea red scab: red_scab      # unknown_eval class
+
+  - id: tea_chowdhury
+    crop: tea
+    role: known
+    fetch: {method: hf, repo: Project-AgML/tea_leaf_disease_classification_bangladesh_2}
+    origin: {country: BD, capture: field}
+    license: CC BY 4.0
+    citation: "Chowdhury & Arman (2025). Mendeley Data doi:10.17632/3x42rbj8yv.1"
+    use_in_paper: true
+    label_map:
+      Blight: null                # merges several blights
+      Healthy_Leaf: healthy
+      Helopeltis: helopeltis
+      Red_Rust: red_rust
+
+  - id: tea_sickness
+    crop: tea
+    role: known
+    fetch: {method: hf, repo: Project-AgML/tea_sickness_classification}
+    origin: {country: KE, capture: field}
+    license: CC BY 4.0
+    citation: "Kimutai, G. (2022). Tea sickness dataset. Mendeley Data doi:10.17632/j32xdt2ff5.2"
+    use_in_paper: true
+    label_map:
+      Anthracnose: anthracnose        # unknown_eval
+      algal leaf: algal_leaf_spot
+      bird eye spot: bird_eye_spot    # unknown_eval
+      brown blight: brown_blight
+      gray light: gray_blight
+      healthy: healthy
+      red leaf spot: red_leaf_spot
+      white spot: white_spot          # unknown_eval
+
+  # ------------------------------------------------------------------ CHILI
+  - id: cold_chili
+    crop: chili
+    role: known
+    fetch: {method: hf, repo: Project-AgML/COLD_chili_leaf_disease_classification, config: raw}
+    origin: {country: IN, capture: field}
+    license: CC BY 4.0
+    citation: "Aishwarya et al. (2024). COLD. Data in Brief. doi:10.17632/7nxxn4gj5s.3"
+    use_in_paper: true
+    label_map:
+      cercospora: leaf_spot
+      healthy: healthy
+      mites_and_trips: mites_thrips
+      nutritional: nutrient_deficiency
+      powdery mildew: powdery_mildew
+
+  - id: chili_kim_korea
+    crop: chili
+    role: known
+    fetch: {method: hf, repo: Project-AgML/chili_pepper_virus_classification}
+    origin: {country: KR, capture: greenhouse}
+    license: CC BY 4.0
+    citation: "Kim et al. (2025). Chili Pepper BBWV2 & Overwatering Stress Leaf Image Dataset. Zenodo. doi:10.5281/zenodo.17901489"
+    use_in_paper: true
+    label_map:
+      healthy: healthy
+      bbwv2_infected: broad_bean_wilt_virus   # unknown_eval
+      flood_stress: flood_stress              # unknown_eval
+
+  - id: chili_bangladesh_mendeley
+    crop: chili
+    role: known
+    enabled: false
+    fetch: {method: manual, url: https://data.mendeley.com/datasets/w9mr3vf56s}
+    origin: {country: BD, capture: field}
+    license: "verify on Mendeley"
+    citation: "Chili Plant Leaf Disease and Growth Stage Dataset from Bangladesh. Mendeley Data w9mr3vf56s"
+    use_in_paper: true
+    notes: "Enable after download; confirm folder names match label_map."
+    label_map:
+      Bacterial Spot: bacterial_spot
+      Curl Virus: leaf_curl
+      Cercospora Leaf Spot: leaf_spot
+      Nutrition Deficiency: nutrient_deficiency
+      White Spot: null
+      Healthy: healthy
+
+  - id: chili_india_4class_mendeley
+    crop: chili
+    role: known
+    enabled: false
+    fetch: {method: manual, url: https://data.mendeley.com/datasets/tm3v4zmh7c}
+    license: "verify on Mendeley"
+    citation: "Chilli Leaf Disease Image Dataset for Classification and Early Diagnosis. Mendeley Data tm3v4zmh7c"
+    use_in_paper: true
+    notes: "Enable after download; confirm folder names match label_map."
+    label_map:
+      Anthracnose: anthracnose
+      Cercospora Leaf Spot: leaf_spot
+      Leaf Curl Disease: leaf_curl
+      Fresh Leaf: healthy
+
+  - id: chili_krishna_mendeley
+    crop: chili
+    role: known
+    enabled: false
+    fetch: {method: manual, url: https://data.mendeley.com/datasets/ymt8k9bjkn}
+    license: "verify on Mendeley"
+    citation: "Image Dataset on Chili Leaf Diseases in the Krishna River Basin. Mendeley Data ymt8k9bjkn"
+    use_in_paper: true
+    notes: "Enable after download; fill label_map from its folder names."
+    label_map: {}
+
+  # ------------------------------------------------------------------ LEGACY (Govi Isuru v1)
+  - id: legacy_tea
+    crop: tea
+    role: known
+    fetch: {method: local, path: legacy/tea_dataset}
+    license: unknown
+    citation: "Govi Isuru v1 tea dataset (source not recorded)"
+    use_in_paper: false
+    label_map:
+      Blister_Blight: blister_blight
+      Brown_Blight: brown_blight
+      Gray_Blight: gray_blight
+      Healthy: healthy
+      Red_Rust: red_rust
+
+  - id: legacy_chili
+    crop: chili
+    role: known
+    fetch: {method: local, path: legacy/chili_dataset}
+    license: unknown
+    citation: "Govi Isuru v1 chili dataset (source not recorded)"
+    use_in_paper: false
+    label_map:
+      Healthy: healthy
+      Leaf Spot: leaf_spot
+      Thrips Damage: mites_thrips
+      Yellow Virus: yellow_leaf_virus
+
+  # ------------------------------------------------------------------ OTHER PLANTS (gate negatives)
+  # Leaves of other species, including crops grown alongside rice/tea/chili in Sri Lanka.
+  - {id: op_plantvillage, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/plant_village_classification},
+     license: "verify", citation: "Hughes & Salathe (2015). PlantVillage. arXiv:1511.08060", use_in_paper: true,
+     max_per_class: 40,
+     # Bell pepper is Capsicum annuum (same species as chili) -> dropped to keep the gate honest.
+     label_map: {"Pepper,_bell___Bacterial_spot": null, "Pepper,_bell___healthy": null,
+                 "Background_without_leaves": "@non_plant", "*": "@keep"}}
+  - {id: op_mango, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/mango_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/mango_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_banana, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/banana_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/banana_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_coffee, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/arabica_coffee_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/arabica_coffee_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_groundnut, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/groundnut_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/groundnut_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_eggplant, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/eggplant_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/eggplant_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_betel, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/betel_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/betel_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_sugarcane, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/sugarcane_leaf_disease_classification},
+     license: "see card", citation: "Project-AgML/sugarcane_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_corn, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/corn_maize_leaf_disease},
+     license: "see card", citation: "Project-AgML/corn_maize_leaf_disease", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
+  - {id: op_rice_field_weeds, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/rice_field_weed_classification},
+     license: CC BY 4.0, citation: "Project-AgML/rice_field_weed_classification", use_in_paper: true, max_per_class: 80,
+     notes: "Hard negatives: grass-like weeds that resemble rice.", label_map: {"*": "@keep"}}
+
+  # ------------------------------------------------------------------ NON-PLANT (gate negatives)
+  - id: nonplant_coco
+    crop: null
+    role: non_plant
+    fetch: {method: coco, max_images: 4000}
+    license: "CC BY 4.0 (annotations); images under Flickr licences"
+    citation: "Lin et al. (2014). Microsoft COCO. ECCV"
+    use_in_paper: true
+    label_map: {"*": "@keep"}

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "govi-ai"
+version = "0.1.0"
+description = "Govi Isuru AI service: open-set crop disease recognition, yield and crop suitability."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+# Core deps are deliberately tiny: they are shared by training and the slim serving image.
+dependencies = [
+    "numpy>=1.26",
+    "pillow>=10.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Phase 1: build the harmonised dataset (runs on Colab or locally).
+data = [
+    "pandas>=2.1",
+    "pyarrow>=14",
+    "scikit-learn>=1.4",
+    "datasets>=2.19",
+    "huggingface_hub>=0.23",
+    "tqdm>=4.66",
+]
+# Phase 2-4: teacher features, student distillation, export. Installed on Colab only.
+train = [
+    "govi-ai[data]",
+    "torch>=2.3",
+    "torchvision>=0.18",
+    "timm>=1.0",
+    "onnx>=1.16",
+    "onnxruntime>=1.18",
+]
+# Legacy baseline only (old Keras models). Never part of the serving image.
+legacy = [
+    "govi-ai[data]",
+    "tensorflow-cpu>=2.16; platform_system != 'Darwin'",
+]
+# Phase 6: the serving image (see service/). No torch, no tensorflow.
+service = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "onnxruntime>=1.18",
+    "pydantic>=2.7",
+    "python-multipart>=0.0.9",
+]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"

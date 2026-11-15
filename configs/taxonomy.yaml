@@ -1,0 +1,75 @@
+# Unified label space for the Govi Isuru crop-health model.
+#
+# Every image in the harmonised dataset gets exactly one of:
+#   role = known        -> crop + one of that crop's `known` classes below (trained on)
+#   role = unknown_eval -> crop + a real disorder that is deliberately NOT trained on;
+#                          used only to evaluate new/unknown-disease detection
+#   role = other_plant  -> leaves of other species (gate head: "other_plant")
+#   role = non_plant    -> anything that is not a plant (gate head: "non_plant")
+#
+# Class ids are stable snake_case strings; never rename one without a version bump.
+# `si` (Sinhala) / `ta` (Tamil) display names are left empty on purpose: they must be
+# filled in by an agronomist, not guessed.
+#
+# `type`: fungal | bacterial | viral | oomycete | algal | pest | abiotic | healthy
+version: 1
+
+gate_classes: [rice, tea, chili, other_plant, non_plant]
+
+crops:
+  rice:
+    scientific_name: Oryza sativa
+    classes:
+      healthy:                  {type: healthy,   status: known, en: Healthy}
+      bacterial_leaf_blight:    {type: bacterial, status: known, en: Bacterial leaf blight}
+      bacterial_leaf_streak:    {type: bacterial, status: known, en: Bacterial leaf streak}
+      bacterial_panicle_blight: {type: bacterial, status: known, en: Bacterial panicle blight}
+      blast:                    {type: fungal,    status: known, en: Rice blast}
+      brown_spot:               {type: fungal,    status: known, en: Brown spot}
+      narrow_brown_leaf_spot:   {type: fungal,    status: known, en: Narrow brown leaf spot}
+      leaf_scald:               {type: fungal,    status: known, en: Leaf scald}
+      sheath_blight:            {type: fungal,    status: known, en: Sheath blight}
+      downy_mildew:             {type: oomycete,  status: known, en: Downy mildew}
+      tungro:                   {type: viral,     status: known, en: Tungro}
+      hispa:                    {type: pest,      status: known, en: Rice hispa}
+      dead_heart:               {type: pest,      status: known, en: Dead heart (stem borer)}
+      leaffolder:               {type: pest,      status: known, en: Rice leaffolder}
+      # Single small source (UCI, 40 images): kept out of training to serve as a real unknown.
+      leaf_smut:                {type: fungal,    status: unknown_eval, en: Leaf smut}
+
+  tea:
+    scientific_name: Camellia sinensis
+    classes:
+      healthy:          {type: healthy, status: known, en: Healthy}
+      blister_blight:   {type: fungal,  status: known, en: Blister blight}
+      brown_blight:     {type: fungal,  status: known, en: Brown blight}
+      gray_blight:      {type: fungal,  status: known, en: Grey blight}
+      # Red rust and algal leaf spot are both caused by Cephaleuros algae. They are kept
+      # separate because datasets label them separately; merge only after expert review.
+      red_rust:         {type: algal,   status: known, en: Red rust}
+      algal_leaf_spot:  {type: algal,   status: known, en: Algal leaf spot}
+      red_leaf_spot:    {type: fungal,  status: known, en: Red leaf spot}
+      helopeltis:       {type: pest,    status: known, en: Tea mosquito bug (Helopeltis)}
+      red_spider_mite:  {type: pest,    status: known, en: Red spider mite}
+      green_mirid_bug:  {type: pest,    status: known, en: Green mirid bug}
+      # Single-source, ~100 images each (tea sickness dataset): held out as real unknowns.
+      anthracnose:      {type: fungal,  status: unknown_eval, en: Anthracnose}
+      bird_eye_spot:    {type: fungal,  status: unknown_eval, en: Bird's eye spot}
+      white_spot:       {type: fungal,  status: unknown_eval, en: White spot}
+      red_scab:         {type: fungal,  status: unknown_eval, en: Red scab}
+
+  chili:
+    scientific_name: Capsicum annuum
+    classes:
+      healthy:             {type: healthy, status: known, en: Healthy}
+      leaf_spot:           {type: fungal,  status: known, en: Leaf spot (incl. Cercospora)}
+      powdery_mildew:      {type: fungal,  status: known, en: Powdery mildew}
+      leaf_curl:           {type: viral,   status: known, en: Leaf curl complex}
+      mites_thrips:        {type: pest,    status: known, en: Mite / thrips damage}
+      nutrient_deficiency: {type: abiotic, status: known, en: Nutrient deficiency}
+      yellow_leaf_virus:   {type: viral,   status: known, en: Yellow leaf (virus)}
+      bacterial_spot:      {type: bacterial, status: known, en: Bacterial spot}
+      anthracnose:         {type: fungal,  status: known, en: Anthracnose}
+      # Real Capsicum disorders absent from the training set -> unknown-disease evaluation.
+      broad_bean_wilt_virus: {type: viral,   status: unknown_eval, en: BBWV2 infection}
+      flood_stress:          {type: abiotic, status: unknown_eval, en: Flood / overwatering stress}

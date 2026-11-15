@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Data and model artifacts never live in git.
+# Datasets are rebuilt by scripts/build_dataset.py; weights are published to the HF Hub.
+/data/
+/artifacts/
+/runs/
+wandb/
+mlruns/
+*.keras
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.joblib
+*.pkl
+*.parquet
+*.zip
+*.tar.gz
+
+# Secrets / env
+.env
+*.pem
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
