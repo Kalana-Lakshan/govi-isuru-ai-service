@@ -184,20 +184,22 @@ sources:
 
   - id: csd_assam
     # Main source of blister blight, the most important tea disease in Sri Lanka.
-    # The HF mirror (80k images, 13.5k/class) appears to be augmented; use the original.
+    # Mendeley v1 archive (sha256 07684c2f...2aa9): nested .rar per class, 13,500 images/class
+    # (12,829 healthy). Verified 2026-11-15: file <class><k> and <class><k + 1500*j> are the SAME
+    # leaf under arbitrary-angle rotation/shift (rotation-invariant colour-histogram intersection
+    # 0.96-0.97 vs 0.42-0.54 for random pairs, all classes incl. healthy). So the dataset holds
+    # 1,500 unique leaves/class; keeping indices 1..1500 keeps exactly one view of each leaf.
+    # Leaves are photographed on a white sheet (not in-canopy field backgrounds).
     crop: tea
     role: known
     fetch:
       method: manual
       url: https://data.mendeley.com/datasets/94fzcdz8gz/1
-    origin: {country: IN, capture: field}
+      max_file_index: 1500
+    origin: {country: IN, capture: white_background}
     license: CC BY 4.0
     citation: "Gupta et al. (2025). CS-D: tea leaf disease dataset from Assam. Data in Brief 112251. doi:10.17632/94fzcdz8gz.1"
     use_in_paper: true
-    # The Mendeley description states the 1,500 images/class were already augmented (zoom, flip,
-    # rotation, shift, shear) and median-filtered. pHash cannot collapse zoom/shear copies, so CS-D
-    # never enters in-domain val/test (it can still be the held-out set in leave-one-dataset-out).
-    train_only: true
     label_map:
       Blister_Blight: blister_blight
       Brown_Blight: brown_blight
@@ -218,7 +220,8 @@ sources:
     use_in_paper: true
     max_per_class: 1500
     train_only: true
-    notes: "Fallback only if the Mendeley original is unavailable; dedupe must collapse augmentations."
+    notes: "Fallback only if the Mendeley original is unavailable. Same 9x augmentation as the original
+      (see csd_assam); row order is unknown, so it stays train_only."
     label_map:
       Blister_Blight: blister_blight
       Brown_Blight: brown_blight

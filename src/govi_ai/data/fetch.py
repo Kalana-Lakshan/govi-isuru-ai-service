@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import urllib.request
 import zipfile
 from collections.abc import Iterator
@@ -20,6 +21,7 @@ from govi_ai.data.registry import Source, norm_label
 log = logging.getLogger(__name__)
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
+_TRAILING_INT = re.compile(r"(\d+)$")
 Sample = tuple[Image.Image, str, str]
 
 # COCO categories that show plants, vegetables or fruit -> such images are NOT "non_plant".
@@ -86,9 +88,14 @@ def _iter_folder(src: Source, root: Path) -> Iterator[Sample]:
     """Label = nearest ancestor folder whose name is in label_map (handles train/val/test or
     'diseased/<class>' nesting); falls back to the immediate parent folder."""
     known = {norm_label(k) for k in src.label_map}
+    max_index = src.fetch.get("max_file_index")
     for path in sorted(root.rglob("*")):
         if path.suffix.lower() not in IMAGE_EXTS or not path.is_file():
             continue
+        if max_index is not None:
+            m = _TRAILING_INT.search(path.stem)
+            if m is None or int(m.group(1)) > int(max_index):
+                continue
         rel = path.relative_to(root)
         label = next((p for p in reversed(rel.parts[:-1]) if norm_label(p) in known), None)
         if label is None:
