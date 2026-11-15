@@ -83,5 +83,7 @@ All results are reported over 3 seeds, with McNemar or Wilcoxon tests where mode
   weather (NASA POWER / CHIRPS) for mid-season updates.
 - **Suitability (done):** the published EcoCrop limiting-factor model (trapezoid score per factor, minimum
   over factors) with the FAO ECOCROP requirements of *Oryza sativa*, *Camellia sinensis* and *Capsicum annuum*.
-  District climate defaults (mean temperature, annual / Maha / Yala rainfall) come from NASA POWER climatology.
+  District climate defaults (mean temperature, annual / Maha / Yala rainfall, elevation) come from ERA5 1995-2024
+  climatology via Open-Meteo (NASA POWER's coarse grid was rejected: it put Nuwara Eliya at 22.7 C and Hambantota
+  at 2,225 mm/yr). CHIRPS rainfall (0.05 deg) is the planned upgrade for dry-zone accuracy.
   Every answer names its limiting factor and the optimal ranges. No training and no synthetic data.

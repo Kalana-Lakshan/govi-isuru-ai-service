@@ -45,7 +45,7 @@ weights will be published to the Hugging Face Hub and pulled when the service im
 | 4 | Calibration, prototype library, decision logic | **code ready** (`build_bundle.py`) |
 | 5 | ONNX INT8 export + parity check | **code ready** (`build_bundle.py`) |
 | 6 | FastAPI service, Docker, OpenAPI contract | **code ready** (`service/`) |
-| 7 | Yield (real DCS data) + suitability (FAO ECOCROP + NASA POWER, EcoCrop model) | **done** (served) |
+| 7 | Yield (real DCS data) + suitability (FAO ECOCROP + ERA5 climate, EcoCrop model) | **done** (served) |
 | 8 | Evaluations, ablations, paper | |
 
 ## Quick start

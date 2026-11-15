@@ -156,6 +156,6 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
 
         r = client.post("/v1/suitability", headers=h,
                         json={"district": "Nuwara Eliya", "soil_ph": 5.0, "drainage": "good"}).json()
-        assert r["ranking"][0]["crop"] == "tea" and r["inputs_used"]["climate_defaults_from"] == "NASA POWER"
+        assert r["ranking"][0]["crop"] == "tea" and r["inputs_used"]["climate_defaults_from"] == "ERA5 climatology"
         assert client.post("/v1/suitability", headers=h, json={"soil_ph": 5.0}).status_code == 422
         assert client.post("/v1/suitability", headers=h, json={"district": "Atlantis", "soil_ph": 5}).status_code == 404

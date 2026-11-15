@@ -219,7 +219,7 @@ def yield_history(district: str, season: Literal["maha", "yala"] | None = None) 
 
 
 class SuitabilityRequest(BaseModel):
-    district: str | None = Field(default=None, description="fills climate defaults from NASA POWER climatology")
+    district: str | None = Field(default=None, description="fills climate and altitude defaults from ERA5 climatology")
     season: Literal["maha", "yala"] = "maha"
     soil_ph: float = Field(ge=3.0, le=10.0)
     temperature_c: float | None = Field(default=None, ge=-5, le=45)
@@ -244,18 +244,19 @@ def suitability(req: SuitabilityRequest) -> dict:
         if clim is None:
             raise HTTPException(404, f"unknown district {req.district}")
     temp = req.temperature_c if req.temperature_c is not None else clim.get("temperature_c")
+    altitude = req.altitude_m if req.altitude_m is not None else clim.get("elevation_m")
     season_rain = req.season_rainfall_mm if req.season_rainfall_mm is not None else clim.get(f"{req.season}_rainfall_mm")
     annual_rain = req.annual_rainfall_mm if req.annual_rainfall_mm is not None else clim.get("annual_rainfall_mm")
     if None in (temp, season_rain, annual_rain):
         raise HTTPException(422, "give a district, or temperature_c, season_rainfall_mm and annual_rainfall_mm")
     ranked = recommend(_suit["reqs"], season_rainfall_mm=season_rain, annual_rainfall_mm=annual_rain,
                        temperature_c=temp, soil_ph=req.soil_ph, irrigated=req.irrigated, drainage=req.drainage,
-                       texture=req.texture, altitude_m=req.altitude_m)
+                       texture=req.texture, altitude_m=altitude)
     return {"ranking": ranked,
             "inputs_used": {"temperature_c": temp, "season_rainfall_mm": season_rain, "annual_rainfall_mm": annual_rain,
                             "season": req.season, "soil_ph": req.soil_ph, "irrigated": req.irrigated,
-                            "drainage": req.drainage, "texture": req.texture, "altitude_m": req.altitude_m,
-                            "climate_defaults_from": "NASA POWER" if clim else None},
+                            "drainage": req.drainage, "texture": req.texture, "altitude_m": altitude,
+                            "climate_defaults_from": "ERA5 climatology" if clim else None},
             "method": "FAO EcoCrop limiting-factor model; classes S1>=0.8, S2>=0.6, S3>=0.4, else N",
             **_suit["meta"]}
 

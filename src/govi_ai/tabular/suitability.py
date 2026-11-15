@@ -10,7 +10,8 @@ Categorical factors (drainage, texture) score 1 if in the optimal set, 0.5 if on
 set, 0 otherwise.
 
 Data: crop parameters from the FAO ECOCROP database (via OpenCLIM/ecocrop's EcoCrop_DB.csv);
-district climate defaults from NASA POWER climatology at district reference points.
+district climate defaults from ERA5 (1995-2024) climatology at district reference points (Open-Meteo,
+temperature downscaled to a 90 m DEM); see scripts/build_suitability.py for why not NASA POWER.
 
 Assumptions (stated in every response):
   * rainfall is compared over the growing cycle for annual crops (rice, chili: the chosen season's
