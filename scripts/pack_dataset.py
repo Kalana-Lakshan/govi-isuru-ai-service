@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import zipfile
 from pathlib import Path
@@ -29,16 +30,23 @@ def pack(data_root: Path, out: Path) -> None:
         final: dict[str, list[str]] = {}
         for r in csv.DictReader(f):
             final.setdefault(r["source"], []).append(r["path"])
+    # A shard is rewritten only when its set of images changed (fingerprint of the sorted paths),
+    # so re-running after a small change does not make Drive re-upload every zip.
+    state_file = out / "shards_state.json"
+    state = json.loads(state_file.read_text(encoding="utf-8")) if state_file.exists() else {}
     index = {}
     for man in sorted((data_root / "manifests").glob("*.csv")):
         source = man.stem
         shard = out / f"images_{source}.zip"
         paths = final.get(source, [])
         if not paths:
+            if shard.exists():
+                shard.unlink()  # source no longer in the dataset
             continue
-        index[source] = {"shard": shard.name, "images": len(paths)}
-        if shard.exists() and shard.stat().st_mtime >= man.stat().st_mtime:
-            print(f"[skip] {shard.name} is up to date")
+        fp = hashlib.sha1("\n".join(sorted(paths)).encode()).hexdigest()
+        index[source] = {"shard": shard.name, "images": len(paths), "fingerprint": fp}
+        if shard.exists() and state.get(source) == fp:
+            print(f"[skip] {shard.name} unchanged")
             continue
         tmp = shard.with_suffix(".zip.part")
         with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_STORED) as z:
@@ -46,6 +54,8 @@ def pack(data_root: Path, out: Path) -> None:
                 z.write(data_root / p, arcname=p)
             z.write(man, arcname=f"manifests/{man.name}")
         tmp.replace(shard)
+        state[source] = fp
+        state_file.write_text(json.dumps(state, indent=1), encoding="utf-8")
         print(f"[ok]   {shard.name}: {len(paths)} images, {shard.stat().st_size / 1e6:.0f} MB")
 
     meta = out / "metadata.zip"
