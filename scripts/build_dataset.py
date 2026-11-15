@@ -78,6 +78,8 @@ def main() -> None:
     ap.add_argument("--list", action="store_true")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    for noisy in ("httpx", "httpcore", "urllib3", "huggingface_hub", "datasets", "fsspec"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
     tax = load_taxonomy()
     reg = load_registry(tax)
