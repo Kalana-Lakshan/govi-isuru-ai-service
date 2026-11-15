@@ -11,7 +11,8 @@
 #     to train the deployed model but is excluded from every reported paper number.
 #
 # fetch.method:
-#   hf     - Hugging Face dataset (streamed; only the images we keep are written to disk)
+#   hf     - Hugging Face dataset: parquet files downloaded whole, read, then deleted; only the images
+#            we keep are written. fetch.max_files caps how many parquet files are read.
 #   manual - download the archive yourself (Mendeley etc.), unzip under <raw-root>/<id>/,
 #            laid out as <class folder>/<images> (nested folders are fine)
 #   local  - a folder you already have (e.g. the legacy Govi Isuru datasets)
@@ -406,15 +407,18 @@ sources:
      license: "see card", citation: "Project-AgML/mango_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
   - {id: op_banana, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/banana_leaf_disease_classification},
      license: "see card", citation: "Project-AgML/banana_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
-  - {id: op_coffee, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/arabica_coffee_leaf_disease_classification},
+  # Disabled: 2.7 GB download for ~60 images/class. Re-enable on a fast connection.
+  - {id: op_coffee, crop: null, role: other_plant, enabled: false, fetch: {method: hf, repo: Project-AgML/arabica_coffee_leaf_disease_classification},
      license: "see card", citation: "Project-AgML/arabica_coffee_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
-  - {id: op_groundnut, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/groundnut_leaf_disease_classification},
+  - {id: op_groundnut, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/groundnut_leaf_disease_classification, max_files: 2},
      license: "see card", citation: "Project-AgML/groundnut_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
-  - {id: op_eggplant, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/eggplant_leaf_disease_classification},
+  # Disabled: 2.4 GB download for ~60 images/class.
+  - {id: op_eggplant, crop: null, role: other_plant, enabled: false, fetch: {method: hf, repo: Project-AgML/eggplant_leaf_disease_classification},
      license: "see card", citation: "Project-AgML/eggplant_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
-  - {id: op_betel, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/betel_leaf_disease_classification},
+  # Disabled: 6 GB download for ~60 images/class.
+  - {id: op_betel, crop: null, role: other_plant, enabled: false, fetch: {method: hf, repo: Project-AgML/betel_leaf_disease_classification},
      license: "see card", citation: "Project-AgML/betel_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
-  - {id: op_sugarcane, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/sugarcane_leaf_disease_classification},
+  - {id: op_sugarcane, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/sugarcane_leaf_disease_classification, max_files: 2},
      license: "see card", citation: "Project-AgML/sugarcane_leaf_disease_classification", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}
   - {id: op_corn, crop: null, role: other_plant, fetch: {method: hf, repo: Project-AgML/corn_maize_leaf_disease},
      license: "see card", citation: "Project-AgML/corn_maize_leaf_disease", use_in_paper: true, max_per_class: 60, label_map: {"*": "@keep"}}

@@ -6,6 +6,7 @@ traced back to the exact item in the upstream dataset (HF row index, relative fi
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import re
@@ -34,7 +35,7 @@ def iter_source(src: Source, data_root: Path, raw_root: Path | None = None) -> I
     raw_root = raw_root or data_root / "raw"
     method = src.fetch["method"]
     if method == "hf":
-        yield from _iter_hf(src)
+        yield from _iter_hf(src, raw_root / "hf_cache")
     elif method in ("manual", "local"):
         root = raw_root / src.id if method == "manual" else _resolve(data_root, src.fetch["path"])
         if not root.exists():
@@ -54,8 +55,20 @@ def _resolve(data_root: Path, p: str) -> Path:
 
 
 # ---------------------------------------------------------------- Hugging Face
-def _iter_hf(src: Source) -> Iterator[Sample]:
-    from datasets import get_dataset_config_names, load_dataset, load_dataset_builder
+def split_hf_url(url: str) -> tuple[str, str]:
+    """'hf://datasets/<org>/<name>@<rev>/<path>' -> (revision, path in repo)."""
+    rest = str(url).split("@", 1)[1]
+    revision, path = rest.split("/", 1)
+    return revision, path
+
+
+def _iter_hf(src: Source, cache_dir: Path) -> Iterator[Sample]:
+    """Download the config's parquet files whole (≈10x faster than HF streaming's many range requests
+    on slow links), read them with pyarrow, and delete each file once processed.
+    ``fetch.max_files`` limits how many parquet files are read (for capped negative sources)."""
+    import pyarrow.parquet as pq
+    from datasets import get_dataset_config_names, load_dataset_builder
+    from huggingface_hub import hf_hub_download
 
     repo = src.fetch["repo"]
     config = src.fetch.get("config")
@@ -70,17 +83,37 @@ def _iter_hf(src: Source) -> Iterator[Sample]:
         elif len(names) > 1:
             raise ValueError(f"[{src.id}] {repo} has configs {names}; set fetch.config explicitly")
 
-    features = load_dataset_builder(repo, config).info.features
+    builder = load_dataset_builder(repo, config)
+    features = builder.info.features
     image_col = next(k for k, v in features.items() if type(v).__name__ == "Image")
     label_col = next(k for k, v in features.items() if type(v).__name__ == "ClassLabel")
     names = features[label_col].names
+    files = sorted(builder.config.data_files[src.fetch.get("split", "train")])
+    if src.fetch.get("max_files"):
+        files = files[: int(src.fetch["max_files"])]
 
-    ds = load_dataset(repo, config, split=src.fetch.get("split", "train"), streaming=True)
-    for i, row in enumerate(ds):
-        img = row[image_col]
-        if img is None:
-            continue
-        yield img, names[row[label_col]], f"hf:{repo}:{config or 'default'}:{i}"
+    i = 0
+    for url in files:
+        revision, path = split_hf_url(url)
+        local = Path(hf_hub_download(repo, path, repo_type="dataset", revision=revision, cache_dir=str(cache_dir)))
+        pf = None
+        try:
+            pf = pq.ParquetFile(local)
+            for batch in pf.iter_batches(batch_size=64, columns=[image_col, label_col]):
+                for cell, lab in zip(batch.column(image_col).to_pylist(), batch.column(label_col).to_pylist()):
+                    i += 1
+                    if not cell or lab is None or not cell.get("bytes"):
+                        continue
+                    try:
+                        img = Image.open(io.BytesIO(cell["bytes"]))
+                        img.load()
+                    except (UnidentifiedImageError, OSError):
+                        log.warning("[%s] unreadable image in %s", src.id, path)
+                        continue
+                    yield img, names[lab], f"hf:{repo}@{revision}:{path}:{i - 1}"
+        finally:
+            del pf
+            local.unlink(missing_ok=True)  # processed: free the disk (the HF cache keeps no copy we need)
 
 
 # ---------------------------------------------------------------- folders (manual / local)
