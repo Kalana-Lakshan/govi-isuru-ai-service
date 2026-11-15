@@ -38,7 +38,7 @@ def finalize(reg, tax, data_root: Path, max_distance: int, seed: int, build_stat
     rows = load_rows(data_root, ids)
     if not rows:
         raise SystemExit("no per-source manifests found; build some sources first")
-    dedupe = assign_groups(rows, max_distance=max_distance)
+    dedupe = assign_groups(rows, max_distance=max_distance, data_root=data_root)
     in_domain_split(rows, seed=seed)
     paper_sources = [s.id for s in reg.sources if s.use_in_paper and s.role == "known"]
     lodo_cols = add_lodo_columns(rows, paper_sources, seed=seed)

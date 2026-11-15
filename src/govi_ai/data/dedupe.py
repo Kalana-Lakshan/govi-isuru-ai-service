@@ -12,13 +12,16 @@ Method
   transforms (identity, rotations, flips), so augmented copies are found too.
 * Candidate pairs come from multi-index hashing on 4 x 16-bit blocks (pigeonhole: any pair within
   Hamming distance <= 3 shares a block; most pairs up to ~8 are found as well), then are verified
-  against ``max_distance``. Clusters = connected components (union-find).
+  against ``max_distance`` and, in the build, by pixel correlation of aligned, background-subtracted
+  thumbnails (``pixel_match``). Groups are formed by leader clustering, never by chaining.
+* This stage is deliberately high-precision (exact copies, flips/rotations, re-encodes). Fuzzier
+  near-duplicates (crops, zooms) are left to the embedding-based check of phase 2.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 
 import numpy as np
 from PIL import Image
@@ -73,22 +76,6 @@ def hamming(a: int, b: int) -> int:
     return (a ^ b).bit_count()
 
 
-class _UnionFind:
-    def __init__(self, n: int) -> None:
-        self.parent = list(range(n))
-
-    def find(self, x: int) -> int:
-        while self.parent[x] != x:
-            self.parent[x] = self.parent[self.parent[x]]
-            x = self.parent[x]
-        return x
-
-    def union(self, a: int, b: int) -> None:
-        ra, rb = self.find(a), self.find(b)
-        if ra != rb:
-            self.parent[max(ra, rb)] = min(ra, rb)
-
-
 def _blocks(h: int) -> Iterable[tuple[int, int]]:
     mask = (1 << _BLOCK_BITS) - 1
     for b in range(_N_BLOCKS):
@@ -96,35 +83,73 @@ def _blocks(h: int) -> Iterable[tuple[int, int]]:
 
 
 def group_near_duplicates(
-    variant_hashes: Sequence[Sequence[int]], max_distance: int = 6
+    variant_hashes: Sequence[Sequence[int]], max_distance: int = 6,
+    verify: Callable[[int, int, int], bool] | None = None,
 ) -> list[int]:
-    """Cluster images whose hashes are within ``max_distance`` under any dihedral transform.
+    """Group duplicates by *leader* clustering (no transitive chaining).
+
+    Each image is compared only with existing group leaders; it joins the closest leader whose hash is
+    within ``max_distance`` under some dihedral transform *and* that passes ``verify(i, leader, variant)``,
+    otherwise it starts a new group. Plain connected components (union-find) chained thousands of
+    unrelated images together on the real data (one 19k-image "group" spanning rice, tea and COCO),
+    because "single leaf on a white sheet" photos all have similar coarse hashes.
 
     Args:
         variant_hashes: per image, its 8 dihedral hashes (index 0 = identity).
-        max_distance: max Hamming distance (of 64 bits) to call two images duplicates.
+        max_distance: max Hamming distance (of 64 bits) for a candidate pair.
+        verify: optional pixel-level check; ``variant`` is the dihedral index that matched.
 
     Returns:
-        group id per image (the smallest member index of its cluster).
+        group id per image (the index of its group's leader).
     """
-    n = len(variant_hashes)
-    index: dict[tuple[int, int], list[int]] = defaultdict(list)
+    index: dict[tuple[int, int], list[int]] = defaultdict(list)  # leaders only
+    group = [-1] * len(variant_hashes)
     for i, hs in enumerate(variant_hashes):
-        for key in _blocks(hs[0]):
-            index[key].append(i)
-
-    uf = _UnionFind(n)
-    for i, hs in enumerate(variant_hashes):
-        seen: set[int] = set()
-        for h in hs:
+        cands: dict[int, tuple[int, int]] = {}
+        for v, h in enumerate(hs):
             for key in _blocks(h):
-                for j in index.get(key, ()):
-                    if j == i or j in seen:
-                        continue
-                    seen.add(j)
-                    if hamming(h, variant_hashes[j][0]) <= max_distance:
-                        uf.union(i, j)
-    return [uf.find(i) for i in range(n)]
+                for leader in index.get(key, ()):
+                    d = hamming(h, variant_hashes[leader][0])
+                    if d <= max_distance and (leader not in cands or d < cands[leader][0]):
+                        cands[leader] = (d, v)
+        chosen = None
+        for leader, (d, v) in sorted(cands.items(), key=lambda kv: kv[1][0]):
+            if verify is None or verify(i, leader, v):
+                chosen = leader
+                break
+        if chosen is None:
+            group[i] = i
+            for key in _blocks(hs[0]):
+                index[key].append(i)
+        else:
+            group[i] = chosen
+    return group
+
+
+THUMB = 32
+
+
+def thumbnail(img: Image.Image) -> np.ndarray:
+    """Background-subtracted, unit-norm 32x32 RGB thumbnail (border median = background estimate),
+    so that 'a leaf on a white sheet' photos are compared on the leaf, not on the sheet."""
+    g = np.asarray(img.convert("RGB").resize((THUMB, THUMB), Image.Resampling.BILINEAR), dtype=np.float32)
+    border = np.concatenate([g[0], g[-1], g[:, 0], g[:, -1]])
+    g = g - np.median(border, 0)
+    g = g - g.mean()
+    return g / (np.linalg.norm(g) + 1e-6)
+
+
+def dihedral(a: np.ndarray, v: int) -> np.ndarray:
+    """Variant ``v`` in the same order as ``dihedral_hashes`` (rot90 k = v // 2, then flip if odd)."""
+    a = np.rot90(a, v // 2)
+    return np.fliplr(a) if v % 2 else a
+
+
+def pixel_match(a: np.ndarray, b: np.ndarray, variant: int, min_corr: float = 0.98) -> bool:
+    """``a`` (transformed by ``variant``) vs ``b``: correlation of background-subtracted thumbnails.
+    0.98 was chosen on 3,000 real candidate pairs: it keeps ~2 % of false pHash matches (different
+    leaves on white sheets) while keeping exact copies, flips/rotations and re-encodes."""
+    return float((dihedral(a, variant) * b).sum()) >= min_corr
 
 
 def hex_hashes(hs: Sequence[int]) -> str:

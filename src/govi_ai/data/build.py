@@ -22,7 +22,11 @@ from pathlib import Path
 
 from PIL import Image
 
-from govi_ai.data.dedupe import dihedral_hashes, group_near_duplicates, hex_hashes, parse_hex_hashes
+import numpy as np
+
+from govi_ai.data.dedupe import (
+    dihedral_hashes, group_near_duplicates, hex_hashes, parse_hex_hashes, pixel_match, thumbnail,
+)
 from govi_ai.data.fetch import iter_source
 from govi_ai.data.registry import Registry, Source
 from govi_ai.taxonomy import Taxonomy
@@ -145,16 +149,31 @@ def load_rows(data_root: Path, source_ids: list[str]) -> list[dict]:
     return rows
 
 
-def assign_groups(rows: list[dict], max_distance: int = 6, one_per_group: bool = True) -> dict:
+def assign_groups(rows: list[dict], max_distance: int = 6, one_per_group: bool = True,
+                  data_root: Path | None = None, min_corr: float = 0.98) -> dict:
     """Add ``group_id`` to every row and drop clusters whose members disagree on the label.
 
     A cluster that is labelled e.g. brown_spot in one source and blast in another is label noise;
     keeping either copy would train or test on a wrong label, so the whole cluster is dropped.
     With ``one_per_group`` only the highest-resolution member of each cluster is kept, which
     removes pre-augmented copies (they add no information and would inflate test sets).
+    With ``data_root``, hash candidates must also pass the pixel check (``dedupe.pixel_match``).
     Returns statistics for the build report.
     """
-    groups = group_near_duplicates([parse_hex_hashes(r["hashes"]) for r in rows], max_distance)
+    verify = None
+    if data_root is not None:
+        cache: dict[int, np.ndarray] = {}
+
+        def thumb(i: int) -> np.ndarray:
+            if i not in cache:
+                with Image.open(data_root / rows[i]["path"]) as im:
+                    cache[i] = thumbnail(im)
+            return cache[i]
+
+        def verify(i: int, leader: int, variant: int) -> bool:
+            return pixel_match(thumb(i), thumb(leader), variant, min_corr)
+
+    groups = group_near_duplicates([parse_hex_hashes(r["hashes"]) for r in rows], max_distance, verify)
     members: dict[int, list[int]] = defaultdict(list)
     for i, g in enumerate(groups):
         members[g].append(i)

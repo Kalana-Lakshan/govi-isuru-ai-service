@@ -57,7 +57,7 @@ def test_build_local_source(tmp_path):
     assert all((root / r["path"]).exists() for r in rows)
 
     rows = load_rows(root, ["tiny"])
-    rep = assign_groups(rows)
+    rep = assign_groups(rows, data_root=root)
     assert rep["duplicate_images"] >= 1 and rep["images_kept"] == 60  # flipped copy collapsed
     in_domain_split(rows)
     assert {r["split"] for r in rows} <= {"train", "val", "test"}
