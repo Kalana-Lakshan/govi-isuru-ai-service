@@ -128,6 +128,9 @@ def build_all(reg: Registry, tax: Taxonomy, data_root: Path, *, ids: list[str] |
         except FileNotFoundError as e:  # manual/local source not downloaded yet: report, continue
             log.warning("%s", e)
             stats.append({"source": src.id, "skipped": str(e)})
+        except Exception as e:  # network drop, sleep/resume, bad archive: keep going; rerun resumes this source
+            log.error("[%s] failed: %r (rerun the build to retry; finished sources are skipped)", src.id, e)
+            stats.append({"source": src.id, "failed": repr(e)})
     return stats
 
 
