@@ -28,19 +28,20 @@ COCO_IMAGES_URL = "http://images.cocodataset.org/zips/val2017.zip"
 COCO_ANN_URL = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
 
 
-def iter_source(src: Source, data_root: Path) -> Iterator[Sample]:
+def iter_source(src: Source, data_root: Path, raw_root: Path | None = None) -> Iterator[Sample]:
+    raw_root = raw_root or data_root / "raw"
     method = src.fetch["method"]
     if method == "hf":
         yield from _iter_hf(src)
     elif method in ("manual", "local"):
-        root = data_root / "raw" / src.id if method == "manual" else _resolve(data_root, src.fetch["path"])
+        root = raw_root / src.id if method == "manual" else _resolve(data_root, src.fetch["path"])
         if not root.exists():
             hint = f"download {src.fetch.get('url')} and unzip into {root}" if method == "manual" else \
                 f"copy the folder to {root}"
             raise FileNotFoundError(f"[{src.id}] {root} not found: {hint}")
         yield from _iter_folder(src, root)
     elif method == "coco":
-        yield from _iter_coco(src, data_root / "raw" / src.id)
+        yield from _iter_coco(src, raw_root / src.id)
     else:  # pragma: no cover - guarded by registry validation
         raise ValueError(method)
 

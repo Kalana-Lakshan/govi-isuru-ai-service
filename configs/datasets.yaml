@@ -12,14 +12,17 @@
 #
 # fetch.method:
 #   hf     - Hugging Face dataset (streamed; only the images we keep are written to disk)
-#   manual - download the archive yourself (Mendeley etc.), unzip under data/raw/<id>/,
+#   manual - download the archive yourself (Mendeley etc.), unzip under <raw-root>/<id>/,
 #            laid out as <class folder>/<images> (nested folders are fine)
 #   local  - a folder you already have (e.g. the legacy Govi Isuru datasets)
 #   coco   - COCO val2017 images minus any image containing plants/vegetables/fruit
+#
+# train_only: true -> never placed in in-domain val/test (use for sources that were augmented at
+#   source with transforms the pHash dedupe cannot undo, e.g. zoom/shear).
 
 defaults:
-  max_side: 640          # stored images are downscaled to this (training uses <= 384)
-  jpeg_quality: 95
+  max_side: 512          # stored images are downscaled to this (training uses <= 384)
+  jpeg_quality: 90
 
 sources:
   # ------------------------------------------------------------------ RICE
@@ -191,6 +194,10 @@ sources:
     license: CC BY 4.0
     citation: "Gupta et al. (2025). CS-D: tea leaf disease dataset from Assam. Data in Brief 112251. doi:10.17632/94fzcdz8gz.1"
     use_in_paper: true
+    # The Mendeley description states the 1,500 images/class were already augmented (zoom, flip,
+    # rotation, shift, shear) and median-filtered. pHash cannot collapse zoom/shear copies, so CS-D
+    # never enters in-domain val/test (it can still be the held-out set in leave-one-dataset-out).
+    train_only: true
     label_map:
       Blister_Blight: blister_blight
       Brown_Blight: brown_blight
@@ -210,6 +217,7 @@ sources:
     citation: "Same as csd_assam"
     use_in_paper: true
     max_per_class: 1500
+    train_only: true
     notes: "Fallback only if the Mendeley original is unavailable; dedupe must collapse augmentations."
     label_map:
       Blister_Blight: blister_blight

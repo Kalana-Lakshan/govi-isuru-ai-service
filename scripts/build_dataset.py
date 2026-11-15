@@ -69,6 +69,7 @@ def finalize(reg, tax, data_root: Path, max_distance: int, seed: int, build_stat
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data-root", type=Path, default=Path("data"))
+    ap.add_argument("--raw-root", type=Path, help="manual downloads / archives (default: <data-root>/raw)")
     ap.add_argument("--sources", nargs="*", help="source ids to build (default: all enabled)")
     ap.add_argument("--force", action="store_true", help="rebuild sources that already have a manifest")
     ap.add_argument("--limit", type=int, help="max images per source (smoke tests)")
@@ -93,7 +94,8 @@ def main() -> None:
     args.data_root.mkdir(parents=True, exist_ok=True)
     stats: list[dict] = []
     if not args.finalize_only:
-        stats = build_all(reg, tax, args.data_root, ids=args.sources, force=args.force, limit=args.limit)
+        stats = build_all(reg, tax, args.data_root, ids=args.sources, force=args.force, limit=args.limit,
+                          raw_root=args.raw_root)
     report = finalize(reg, tax, args.data_root, args.max_distance, args.seed, stats)
     print(f"manifest: {args.data_root / 'manifest.csv'}  rows={report['rows']}")
     print(f"dedupe:   {report['dedupe']['duplicate_images']} duplicates, "

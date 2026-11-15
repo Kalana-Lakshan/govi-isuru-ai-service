@@ -36,6 +36,20 @@ def test_in_domain_split_is_group_safe_and_proportional():
     assert all(r["split"] == "unknown_eval" for r in rows if r["role"] == "unknown_eval")
 
 
+def test_train_only_rows_never_reach_val_or_test():
+    rows = _rows()
+    for r in rows:
+        if r["source"] == "s3":
+            r["train_only"] = "True"
+    in_domain_split(rows, seed=0)
+    assert {r["split"] for r in rows if r["source"] == "s3" and r["role"] == "known"} == {"train"}
+    out = lodo_split(rows, "s1", seed=0)
+    assert {v for r, v in zip(rows, out) if r["source"] == "s3" and r["role"] == "known"} == {"train"}
+    # ...but a train_only source can still be the held-out LODO test set
+    out = lodo_split(rows, "s3", seed=0)
+    assert {v for r, v in zip(rows, out) if r["source"] == "s3" and r["role"] == "known"} == {"test"}
+
+
 def test_lodo_holds_out_one_source():
     rows = _rows()
     in_domain_split(rows, seed=0)

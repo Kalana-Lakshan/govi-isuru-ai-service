@@ -45,6 +45,7 @@ class Source:
     use_in_paper: bool
     label_map: dict[str, str | None]
     enabled: bool = True
+    train_only: bool = False
     max_per_class: int | None = None
     origin: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
@@ -103,7 +104,8 @@ def load_registry(tax: Taxonomy, path: str | Path | None = None) -> Registry:
             id=s["id"], crop=s.get("crop"), role=s["role"], fetch=dict(s["fetch"]),
             license=str(s.get("license", "unknown")), citation=str(s.get("citation", "")),
             use_in_paper=bool(s.get("use_in_paper", False)), label_map=dict(s.get("label_map") or {}),
-            enabled=bool(s.get("enabled", True)), max_per_class=s.get("max_per_class"),
+            enabled=bool(s.get("enabled", True)), train_only=bool(s.get("train_only", False)),
+            max_per_class=s.get("max_per_class"),
             origin=dict(s.get("origin") or {}), notes=str(s.get("notes", "")),
         )
         _validate(src, tax)

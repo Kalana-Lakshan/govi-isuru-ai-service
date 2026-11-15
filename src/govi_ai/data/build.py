@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 MANIFEST_FIELDS = [
     "sample_id", "path", "source", "source_label", "role", "crop", "label",
-    "width", "height", "use_in_paper", "origin_ref", "hashes",
+    "width", "height", "use_in_paper", "train_only", "origin_ref", "hashes",
 ]
 
 
@@ -47,6 +47,7 @@ class Row:
     width: int
     height: int
     use_in_paper: bool
+    train_only: bool
     origin_ref: str
     hashes: str
 
@@ -61,17 +62,21 @@ def normalise_image(img: Image.Image, max_side: int) -> Image.Image:
 
 
 def build_source(
-    src: Source, tax: Taxonomy, data_root: Path, *, max_side: int = 640, jpeg_quality: int = 95,
-    limit: int | None = None,
+    src: Source, tax: Taxonomy, data_root: Path, *, max_side: int = 512, jpeg_quality: int = 90,
+    limit: int | None = None, raw_root: Path | None = None,
 ) -> dict:
-    """Fetch one source, write normalised images and ``manifests/<id>.csv``. Returns stats."""
+    """Fetch one source, write normalised images and ``manifests/<id>.csv``. Returns stats.
+
+    ``raw_root`` (default ``data_root/raw``) holds manual downloads and archives such as COCO;
+    keep it on local disk when ``data_root`` is a synced folder.
+    """
     out_dir = data_root / "images" / src.id
     rows: list[Row] = []
     per_class: Counter[str] = Counter()
     dropped: Counter[str] = Counter()
     seen_ids: set[str] = set()
 
-    for i, (img, raw_label, ref) in enumerate(iter_source(src, data_root)):
+    for i, (img, raw_label, ref) in enumerate(iter_source(src, data_root, raw_root)):
         if limit is not None and i >= limit:
             break
         res = src.resolve(raw_label, tax)
@@ -97,7 +102,7 @@ def build_source(
         rows.append(Row(
             sample_id=sid, path=rel.as_posix(), source=src.id, source_label=raw_label, role=res.role,
             crop=res.crop or "", label=res.label, width=norm.width, height=norm.height,
-            use_in_paper=src.use_in_paper, origin_ref=ref, hashes=hex_hashes(dihedral_hashes(norm)),
+            use_in_paper=src.use_in_paper, train_only=src.train_only, origin_ref=ref, hashes=hex_hashes(dihedral_hashes(norm)),
         ))
 
     man_dir = data_root / "manifests"
@@ -109,16 +114,17 @@ def build_source(
 
 
 def build_all(reg: Registry, tax: Taxonomy, data_root: Path, *, ids: list[str] | None = None,
-              force: bool = False, limit: int | None = None) -> list[dict]:
-    max_side = int(reg.defaults.get("max_side", 640))
-    quality = int(reg.defaults.get("jpeg_quality", 95))
+              force: bool = False, limit: int | None = None, raw_root: Path | None = None) -> list[dict]:
+    max_side = int(reg.defaults.get("max_side", 512))
+    quality = int(reg.defaults.get("jpeg_quality", 90))
     stats = []
     for src in reg.enabled(ids):
         if not force and (data_root / "manifests" / f"{src.id}.csv").exists():
             log.info("[%s] already built (use --force to rebuild)", src.id)
             continue
         try:
-            stats.append(build_source(src, tax, data_root, max_side=max_side, jpeg_quality=quality, limit=limit))
+            stats.append(build_source(src, tax, data_root, max_side=max_side, jpeg_quality=quality,
+                                      limit=limit, raw_root=raw_root))
         except FileNotFoundError as e:  # manual/local source not downloaded yet: report, continue
             log.warning("%s", e)
             stats.append({"source": src.id, "skipped": str(e)})

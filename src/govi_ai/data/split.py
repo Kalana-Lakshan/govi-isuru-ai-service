@@ -55,9 +55,16 @@ def _fold_to_split(f: int) -> str:
     return "train"
 
 
+def _is_train_only(r: dict) -> bool:
+    return str(r.get("train_only", "")).lower() in ("true", "1")
+
+
 def in_domain_split(rows: list[dict], seed: int = 42) -> None:
-    """Write ``row['split']`` in place."""
-    trainable = [r for r in rows if r["role"] != "unknown_eval"]
+    """Write ``row['split']`` in place. ``train_only`` rows always go to train."""
+    for r in rows:
+        if _is_train_only(r) and r["role"] != "unknown_eval":
+            r["split"] = "train"
+    trainable = [r for r in rows if r["role"] != "unknown_eval" and not _is_train_only(r)]
     strata = [f"{r['crop']}:{r['label']}" if r["role"] == "known" else f"{r['role']}:{r['source']}"
               for r in trainable]
     folds = _fold_assign(strata, [r["group_id"] for r in trainable], seed)
@@ -83,6 +90,8 @@ def lodo_split(rows: list[dict], held_source: str, seed: int = 42) -> list[str]:
             out[i] = "test" if r["role"] == "known" else "unknown_eval"
         elif r["group_id"] in held_groups:
             out[i] = "excluded"
+        elif r["crop"] == crop and r["role"] == "known" and _is_train_only(r):
+            out[i] = "train"
         elif r["crop"] == crop and r["role"] == "known":
             same_crop_idx.append(i)
         else:
