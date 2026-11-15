@@ -24,12 +24,18 @@ META_FILES = ("manifest.csv", "build_report.json")
 
 def pack(data_root: Path, out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
+    # Only images that survived deduplication (rows of the final manifest) are packed.
+    with (data_root / "manifest.csv").open(newline="", encoding="utf-8") as f:
+        final: dict[str, list[str]] = {}
+        for r in csv.DictReader(f):
+            final.setdefault(r["source"], []).append(r["path"])
     index = {}
     for man in sorted((data_root / "manifests").glob("*.csv")):
         source = man.stem
         shard = out / f"images_{source}.zip"
-        with man.open(newline="", encoding="utf-8") as f:
-            paths = [r["path"] for r in csv.DictReader(f)]
+        paths = final.get(source, [])
+        if not paths:
+            continue
         index[source] = {"shard": shard.name, "images": len(paths)}
         if shard.exists() and shard.stat().st_mtime >= man.stat().st_mtime:
             print(f"[skip] {shard.name} is up to date")
