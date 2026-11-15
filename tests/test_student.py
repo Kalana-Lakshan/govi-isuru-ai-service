@@ -145,3 +145,30 @@ def test_train_and_eval_scripts_end_to_end(tmp_path):
     assert r.returncode == 0, r.stderr[-2000:]
     rep = json.loads((run / "report.json").read_text())
     assert "macro_f1" in rep["gate"] and "closed_set" in rep["crops"]["rice"]
+
+
+def test_training_resumes_from_last_checkpoint(tmp_path):
+    """Simulates a Colab disconnect: a 1-epoch run, then the same command asking for 2 epochs."""
+    from PIL import Image
+
+    df, _, _ = _fake_df(n_per=4)
+    df = df.drop(columns=["gate_idx", "crop_idx", "disease_idx"])
+    rng = np.random.default_rng(1)
+    (tmp_path / "images").mkdir()
+    df["path"] = [f"images/{i}.jpg" for i in range(len(df))]
+    for p in df["path"]:
+        Image.fromarray((rng.random((24, 24, 3)) * 255).astype(np.uint8)).save(tmp_path / p)
+    df["use_in_paper"] = True
+    df.to_csv(tmp_path / "manifest.csv", index=False)
+    run = tmp_path / "run"
+    base = [sys.executable, str(REPO / "scripts" / "train_student.py"), "--data-root", str(tmp_path), "--out", str(run),
+            "--teacher", "none", "--student", "mnv4_s", "--no-pretrained", "--img-size", "32", "--batch-size", "8",
+            "--workers", "0", "--epoch-size", "16"]
+    r1 = subprocess.run(base + ["--epochs", "1"], capture_output=True, text=True, cwd=REPO)
+    assert r1.returncode == 0, r1.stderr[-1500:]
+    assert (run / "last.pt").exists()
+    r2 = subprocess.run(base + ["--epochs", "2"], capture_output=True, text=True, cwd=REPO)
+    assert r2.returncode == 0, r2.stderr[-1500:]
+    assert "resumed from" in r2.stdout and "at epoch 1" in r2.stdout
+    epochs = [json.loads(line)["epoch"] for line in (run / "history.jsonl").read_text().splitlines()]
+    assert epochs == [0, 1]

@@ -58,6 +58,7 @@ def parse_args(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--no-pretrained", action="store_true")
     ap.add_argument("--max-steps", type=int, help="stop early (smoke tests)")
+    ap.add_argument("--fresh", action="store_true", help="ignore last.pt and start over")
     return ap.parse_args(argv)
 
 
@@ -146,9 +147,22 @@ def main(argv=None) -> None:
     ema = timm.utils.ModelEmaV3(model, decay=args.ema)
     weights = LossWeights(oe=args.w_oe, kd=0.0 if teacher is None else args.w_kd, kd_temperature=args.kd_temperature)
 
-    best, step = -1.0, 0
+    best, step, start_epoch = -1.0, 0, 0
+    last = args.out / "last.pt"
+    if last.exists() and not args.fresh:
+        # Resume after a Colab disconnect: restore everything that changes during training.
+        ck = torch.load(last, map_location=device, weights_only=False)
+        model.load_state_dict(ck["model"])
+        ema.module.load_state_dict(ck["ema"])
+        opt.load_state_dict(ck["opt"])
+        sched.load_state_dict(ck["sched"])
+        scaler.load_state_dict(ck["scaler"])
+        best, step, start_epoch = ck["best"], ck["step"], ck["epoch"] + 1
+        print(f"resumed from {last} at epoch {start_epoch} (best {best:.4f})")
+    if start_epoch >= args.epochs:
+        print("training already complete")
     hist = (args.out / "history.jsonl").open("a", encoding="utf-8")
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, args.epochs):
         model.train()
         t0, run, n = time.time(), {}, 0
         for b in tr_dl:
@@ -183,9 +197,16 @@ def main(argv=None) -> None:
                         "img_size": args.img_size, "mean": mean, "std": std, "scale": args.scale,
                         "gate_classes": space.gate_classes, "crop_classes": space.crop_classes,
                         "protocol": args.protocol, "epoch": epoch, "val": val}, args.out / "best.pt")
+        # Written last and atomically, so an interrupted save never corrupts the resume point.
+        tmp = last.with_suffix(".tmp")
+        torch.save({"model": model.state_dict(), "ema": ema.module.state_dict(), "opt": opt.state_dict(),
+                    "sched": sched.state_dict(), "scaler": scaler.state_dict(), "epoch": epoch,
+                    "step": step, "best": best}, tmp)
+        tmp.replace(last)
         if args.max_steps and step >= args.max_steps:
             break
     hist.close()
+    (args.out / "DONE").write_text(f"best {best:.4f}\n", encoding="utf-8")
     print(f"best val score {best:.4f} -> {args.out / 'best.pt'}")
 
 

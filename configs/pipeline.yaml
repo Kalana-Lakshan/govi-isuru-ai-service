@@ -1,0 +1,84 @@
+# Experiment plan for Colab free tier. Steps run in order; a step is "done" when its `done` file
+# exists on Drive, so every session simply continues where the last one stopped.
+# Placeholders: {DATA} local dataset dir, {GOVI} Drive project dir, {FEATS} {GOVI}/features, {RUNS} {GOVI}/runs
+# `gpu: true` steps are skipped on a CPU runtime. `hours` is a rough T4 estimate used to avoid
+# starting a step that cannot finish inside the remaining session budget (training resumes anyway).
+
+teacher: [dinov2_b, clip_b16]
+
+steps:
+  # ---------------------------------------------------------------- phase 2: frozen features + probes
+  - id: features
+    gpu: true
+    hours: 1.2
+    cmd: python scripts/extract_features.py --data-root {DATA} --out {FEATS} --backbones dinov2_b clip_b16 effnet_b0 mnv4_s --batch-size 128 --workers 2
+    done: "{FEATS}/mnv4_s.npz"
+  - id: probes
+    gpu: false
+    hours: 0.4
+    cmd: >-
+      python scripts/run_probes.py --data-root {DATA} --features {FEATS} --backbones effnet_b0 &&
+      python scripts/run_probes.py --data-root {DATA} --features {FEATS} --backbones mnv4_s &&
+      python scripts/run_probes.py --data-root {DATA} --features {FEATS} --backbones clip_b16 &&
+      python scripts/run_probes.py --data-root {DATA} --features {FEATS} --backbones dinov2_b &&
+      python scripts/run_probes.py --data-root {DATA} --features {FEATS} --backbones dinov2_b clip_b16
+    done: "{FEATS}/results/probe_dinov2_b+clip_b16.json"
+
+  # ---------------------------------------------------------------- phase 3: main student
+  - id: student_main
+    gpu: true
+    hours: 2.0
+    cmd: >-
+      python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
+      --student mnv4_s --protocol split --epochs 25 --workers 2 --out {RUNS}/mnv4_s_split &&
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/mnv4_s_split --workers 2
+    done: "{RUNS}/mnv4_s_split/report.json"
+
+  # ---------------------------------------------------------------- phases 4-5: serving bundle
+  - id: bundle_v1
+    gpu: false
+    hours: 0.3
+    cmd: python scripts/build_bundle.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/bundles/v1 --version v1
+    done: "{GOVI}/bundles/v1/bundle_report.json"
+
+  # ---------------------------------------------------------------- ablations (paper table)
+  - id: abl_no_kd
+    gpu: true
+    hours: 1.6
+    cmd: >-
+      python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher none --student mnv4_s
+      --protocol split --epochs 20 --workers 2 --out {RUNS}/abl_no_kd &&
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_kd --workers 2
+    done: "{RUNS}/abl_no_kd/report.json"
+  - id: abl_no_oe
+    gpu: true
+    hours: 1.6
+    cmd: >-
+      python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
+      --student mnv4_s --protocol split --epochs 20 --w-oe 0 --workers 2 --out {RUNS}/abl_no_oe &&
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_oe --workers 2
+    done: "{RUNS}/abl_no_oe/report.json"
+  - id: abl_no_margin
+    gpu: true
+    hours: 1.6
+    cmd: >-
+      python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
+      --student mnv4_s --protocol split --epochs 20 --margin 0 --workers 2 --out {RUNS}/abl_no_margin &&
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_margin --workers 2
+    done: "{RUNS}/abl_no_margin/report.json"
+
+  # ---------------------------------------------------------------- cross-dataset (leave-one-dataset-out)
+  - {id: lodo_paddy_doctor, gpu: true, hours: 1.2, lodo: paddy_doctor}
+  - {id: lodo_rice_bangladesh, gpu: true, hours: 1.2, lodo: rice_bangladesh}
+  - {id: lodo_csd_assam, gpu: true, hours: 1.2, lodo: csd_assam}
+  - {id: lodo_tealeafbd, gpu: true, hours: 1.2, lodo: tealeafbd}
+  - {id: lodo_chili_bd_8814, gpu: true, hours: 1.2, lodo: chili_bd_8814}
+  - {id: lodo_chili_kim_korea, gpu: true, hours: 1.2, lodo: chili_kim_korea}
+
+# Template for `lodo:` steps (expanded by scripts/pipeline.py).
+lodo_template:
+  cmd: >-
+    python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
+    --student mnv4_s --protocol lodo_{SRC} --epochs 15 --workers 2 --out {RUNS}/lodo_{SRC} &&
+    python scripts/eval_student.py --data-root {DATA} --run {RUNS}/lodo_{SRC} --workers 2
+  done: "{RUNS}/lodo_{SRC}/report.json"

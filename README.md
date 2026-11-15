@@ -62,6 +62,11 @@ python scripts/build_dataset.py --data-root data --sources uci_rice tea_sickness
 
 Full build and baseline: open `notebooks/01_build_dataset.ipynb` in Google Colab.
 
+**Running the experiments (Colab free tier):** open `notebooks/00_colab_runner.ipynb` each session
+(T4 GPU) and click *Run all*. It runs the next unfinished steps of `configs/pipeline.yaml`, saves
+everything to Google Drive, and resumes training after a disconnect.
+`python scripts/pipeline.py --govi <drive>/govi-ai --status` shows progress.
+
 ## Data rules
 
 - **Real photographs only.** No synthetic or generated data anywhere, including the tabular models.
