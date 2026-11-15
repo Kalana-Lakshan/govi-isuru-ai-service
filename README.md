@@ -22,7 +22,7 @@ the data, and [docs/RESEARCH.md](docs/RESEARCH.md) for the literature it is base
 ```
 configs/        taxonomy.yaml (unified label space) · datasets.yaml (every image source, licence, citation)
 src/govi_ai/    shared package: taxonomy, data pipeline, metrics (later: models, inference)
-scripts/        build_dataset.py · eval_legacy.py (later: train / distill / export)
+scripts/        build_dataset.py · pack_dataset.py · eval_legacy.py · extract_features.py · run_probes.py
 notebooks/      Colab notebooks, one per phase
 service/        FastAPI + ONNX Runtime serving image (phase 6)
 tests/          unit + end-to-end tests (pytest)
@@ -37,7 +37,7 @@ weights will be published to the Hugging Face Hub and pulled when the service im
 | Phase | What | State |
 |---|---|---|
 | 1 | Data: registry, harmonisation, dedupe, leakage-safe splits, legacy baseline | **code ready, run on Colab** |
-| 2 | Teacher: frozen foundation-model features (DINOv2 / CLIP), linear & fusion probes | next |
+| 2 | Teacher: frozen foundation-model features (DINOv2 / CLIP), linear & fusion probes | **code ready** (notebook 02) |
 | 3 | Student: hierarchical open-set CNN, knowledge distillation | |
 | 4 | Calibration, prototype library, decision logic | |
 | 5 | ONNX INT8 export + parity check | |
