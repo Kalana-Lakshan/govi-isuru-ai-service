@@ -1,0 +1,16 @@
+.git
+.venv
+venv
+data
+artifacts
+runs
+notebooks
+tests
+docs
+**/__pycache__
+**/*.pyc
+*.npz
+*.pt
+*.keras
+bundle/*.pre.onnx
+bundle/model.onnx
