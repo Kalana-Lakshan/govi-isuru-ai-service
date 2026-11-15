@@ -106,6 +106,16 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
         {"district": "POLONNARUWA", "season": "maha", "year": 2027, "method": "climatology_5yr_mean",
          "yield_kg_ha": {"p10": 4000, "p50": 4600, "p90": 5500}}]}))
     (bundle / "yield" / "history.json").write_text(json.dumps({"history": {"POLONNARUWA": {"maha": {"2026": 6095}}}}))
+    from govi_ai.tabular.suitability import CropRequirements
+    sys.path.insert(0, str(REPO / "tests"))
+    from test_suitability import ECOCROP
+
+    (bundle / "suitability").mkdir(exist_ok=True)
+    (bundle / "suitability" / "crops.json").write_text(json.dumps({"crop_source": "test", "crops": {
+        k: CropRequirements.from_ecocrop_row(k, v).to_dict() for k, v in ECOCROP.items()}}))
+    (bundle / "suitability" / "districts.json").write_text(json.dumps({"climate_source": "test", "districts": {
+        "NUWARA ELIYA": {"temperature_c": 18.5, "annual_rainfall_mm": 2300, "maha_rainfall_mm": 1100,
+                         "yala_rainfall_mm": 1200}}}))
     monkeypatch.setenv("GOVI_BUNDLE_DIR", str(bundle))
     monkeypatch.setenv("GOVI_STATE_DIR", str(tmp_path / "state"))
     monkeypatch.setenv("GOVI_API_KEY", "test-key")
@@ -143,3 +153,9 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
         assert client.get("/v1/yield/forecast?district=nowhere&season=maha", headers=h).status_code == 404
         assert client.get("/v1/yield/history?district=Polonnaruwa", headers=h).json()["history"]["maha"]["2026"] == 6095
         assert "POLONNARUWA" in client.get("/v1/yield/districts", headers=h).json()["districts"]
+
+        r = client.post("/v1/suitability", headers=h,
+                        json={"district": "Nuwara Eliya", "soil_ph": 5.0, "drainage": "good"}).json()
+        assert r["ranking"][0]["crop"] == "tea" and r["inputs_used"]["climate_defaults_from"] == "NASA POWER"
+        assert client.post("/v1/suitability", headers=h, json={"soil_ph": 5.0}).status_code == 422
+        assert client.post("/v1/suitability", headers=h, json={"district": "Atlantis", "soil_ph": 5}).status_code == 404

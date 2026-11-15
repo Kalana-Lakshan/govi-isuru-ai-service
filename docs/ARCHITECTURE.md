@@ -81,5 +81,7 @@ All results are reported over 3 seeds, with McNemar or Wilcoxon tests where mode
   last-year baseline 493 (13.5 %). Without in-season weather nothing beats climatology, so the service returns
   the 5-year mean with an empirically calibrated 80 % interval (79.5 % backtest coverage). Next step: in-season
   weather (NASA POWER / CHIRPS) for mid-season updates.
-- **Suitability:** a knowledge-based scoring model following FAO land evaluation. Crop requirement ranges come from
-  FAO ECOCROP (GAEZ v4), with soil data from SoilGrids and climate from NASA POWER. Every score comes with its reasons.
+- **Suitability (done):** the published EcoCrop limiting-factor model (trapezoid score per factor, minimum
+  over factors) with the FAO ECOCROP requirements of *Oryza sativa*, *Camellia sinensis* and *Capsicum annuum*.
+  District climate defaults (mean temperature, annual / Maha / Yala rainfall) come from NASA POWER climatology.
+  Every answer names its limiting factor and the optimal ranges. No training and no synthetic data.

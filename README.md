@@ -25,6 +25,7 @@ configs/        taxonomy.yaml (unified label space) · datasets.yaml (every imag
 src/govi_ai/    shared package: taxonomy, data pipeline, metrics, open-set scores, models, training
 scripts/        build_dataset.py · pack_dataset.py · eval_legacy.py · extract_features.py · run_probes.py
                 train_student.py · eval_student.py · build_bundle.py · fetch_paddy_stats.py · train_yield.py
+                build_suitability.py
 notebooks/      Colab notebooks, one per phase
 service/        FastAPI + ONNX Runtime serving image (phase 6)
 tests/          unit + end-to-end tests (pytest)
@@ -44,7 +45,7 @@ weights will be published to the Hugging Face Hub and pulled when the service im
 | 4 | Calibration, prototype library, decision logic | **code ready** (`build_bundle.py`) |
 | 5 | ONNX INT8 export + parity check | **code ready** (`build_bundle.py`) |
 | 6 | FastAPI service, Docker, OpenAPI contract | **code ready** (`service/`) |
-| 7 | Yield (real DCS data) + suitability (FAO ECOCROP / GAEZ knowledge model) | **yield done** (served); suitability next |
+| 7 | Yield (real DCS data) + suitability (FAO ECOCROP + NASA POWER, EcoCrop model) | **done** (served) |
 | 8 | Evaluations, ablations, paper | |
 
 ## Quick start

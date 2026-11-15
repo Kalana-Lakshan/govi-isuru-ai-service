@@ -27,6 +27,7 @@ Officer-registered prototypes are written to `/app/state`; mount a volume there 
 | GET | `/v1/yield/districts` | districts with forecasts |
 | GET | `/v1/yield/forecast?district=&season=maha\|yala&area_ha=` | next-season paddy yield (p10/p50/p90 kg/ha, 80 % interval) and expected harvest |
 | GET | `/v1/yield/history?district=&season=` | observed DCS yields per year |
+| POST | `/v1/suitability` | rank rice / tea / chili (FAO EcoCrop model): `{district?, season, soil_ph, temperature_c?, season_rainfall_mm?, annual_rainfall_mm?, irrigated, drainage?, texture?, altitude_m?}` |
 
 Statuses: `KNOWN_DISEASE`, `UNKNOWN_DISEASE` (includes `embedding_f16_base64` for officer review),
 `LOW_CONFIDENCE`, `WRONG_CROP` (with `detected_crop`), `UNSUPPORTED_PLANT`, `NOT_A_PLANT`.

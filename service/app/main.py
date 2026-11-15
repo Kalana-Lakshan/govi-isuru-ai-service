@@ -72,12 +72,30 @@ def _load_yield() -> dict:
     return {"meta": {k: v for k, v in f.items() if k != "forecasts"}, "forecasts": index, "history": h.get("history", {})}
 
 
+_suit: dict = {}
+
+
+def _load_suitability() -> dict:
+    """Optional suitability files (bundle/suitability/*.json from scripts/build_suitability.py)."""
+    from govi_ai.tabular.suitability import CropRequirements
+
+    d = BUNDLE_DIR / "suitability"
+    if not (d / "crops.json").exists():
+        return {}
+    c = json.loads((d / "crops.json").read_text(encoding="utf-8"))
+    dist = json.loads((d / "districts.json").read_text(encoding="utf-8")) if (d / "districts.json").exists() else {}
+    reqs = {k: CropRequirements(**v) for k, v in c["crops"].items()}
+    meta = {k: v for k, v in c.items() if k != "crops"} | {"climate_source": dist.get("climate_source")}
+    return {"reqs": reqs, "districts": dist.get("districts", {}), "meta": meta}
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _engine, _yield
+    global _engine, _yield, _suit
     _engine = Engine(BUNDLE_DIR, threads=THREADS)
     app.state.officer_prototypes = _load_officer_prototypes(_engine)
     _yield = _load_yield()
+    _suit = _load_suitability()
     yield
     _engine = None
 
@@ -198,6 +216,48 @@ def yield_history(district: str, season: Literal["maha", "yala"] | None = None) 
         raise HTTPException(404, f"unknown district {district}")
     return {"district": district.strip().upper(), "history": {season: h.get(season, {})} if season else h,
             "unit": "kg per net hectare"}
+
+
+class SuitabilityRequest(BaseModel):
+    district: str | None = Field(default=None, description="fills climate defaults from NASA POWER climatology")
+    season: Literal["maha", "yala"] = "maha"
+    soil_ph: float = Field(ge=3.0, le=10.0)
+    temperature_c: float | None = Field(default=None, ge=-5, le=45)
+    season_rainfall_mm: float | None = Field(default=None, ge=0, le=6000)
+    annual_rainfall_mm: float | None = Field(default=None, ge=0, le=8000)
+    irrigated: bool = False
+    drainage: Literal["poor", "moderate", "good", "excessive"] | None = None
+    texture: Literal["clay", "clay_loam", "loam", "sandy_loam", "sandy", "organic"] | None = None
+    altitude_m: float | None = Field(default=None, ge=0, le=3000)
+
+
+@app.post("/v1/suitability", dependencies=[Depends(require_key)])
+def suitability(req: SuitabilityRequest) -> dict:
+    """Rank rice / tea / chili with the FAO EcoCrop limiting-factor model (real ECOCROP requirements)."""
+    from govi_ai.tabular.suitability import recommend
+
+    if not _suit:
+        raise HTTPException(503, "suitability data not available in this bundle")
+    clim = {}
+    if req.district:
+        clim = _suit["districts"].get(req.district.strip().upper())
+        if clim is None:
+            raise HTTPException(404, f"unknown district {req.district}")
+    temp = req.temperature_c if req.temperature_c is not None else clim.get("temperature_c")
+    season_rain = req.season_rainfall_mm if req.season_rainfall_mm is not None else clim.get(f"{req.season}_rainfall_mm")
+    annual_rain = req.annual_rainfall_mm if req.annual_rainfall_mm is not None else clim.get("annual_rainfall_mm")
+    if None in (temp, season_rain, annual_rain):
+        raise HTTPException(422, "give a district, or temperature_c, season_rainfall_mm and annual_rainfall_mm")
+    ranked = recommend(_suit["reqs"], season_rainfall_mm=season_rain, annual_rainfall_mm=annual_rain,
+                       temperature_c=temp, soil_ph=req.soil_ph, irrigated=req.irrigated, drainage=req.drainage,
+                       texture=req.texture, altitude_m=req.altitude_m)
+    return {"ranking": ranked,
+            "inputs_used": {"temperature_c": temp, "season_rainfall_mm": season_rain, "annual_rainfall_mm": annual_rain,
+                            "season": req.season, "soil_ph": req.soil_ph, "irrigated": req.irrigated,
+                            "drainage": req.drainage, "texture": req.texture, "altitude_m": req.altitude_m,
+                            "climate_defaults_from": "NASA POWER" if clim else None},
+            "method": "FAO EcoCrop limiting-factor model; classes S1>=0.8, S2>=0.6, S3>=0.4, else N",
+            **_suit["meta"]}
 
 
 @app.post("/v1/disease/prototypes", dependencies=[Depends(require_key)])
