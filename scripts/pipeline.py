@@ -90,7 +90,8 @@ def main() -> None:
     gpu = has_gpu()
     if args.status:
         for s in steps:
-            print(f"[{'x' if Path(s['done']).exists() else ' '}] {s['id']:24s} gpu={s.get('gpu', False)}  ~{s.get('hours')} h")
+            mark = "*" if s.get("always") else ("x" if Path(s["done"]).exists() else " ")
+            print(f"[{mark}] {s['id']:24s} gpu={s.get('gpu', False)}  ~{s.get('hours')} h")
         return
 
     t0 = time.time()
@@ -98,7 +99,7 @@ def main() -> None:
     for s in steps:
         if args.only and s["id"] not in args.only:
             continue
-        if Path(s["done"]).exists():
+        if s.get("always") or Path(s["done"]).exists():
             continue
         if s.get("gpu") and not gpu:
             print(f"[skip] {s['id']} needs a GPU runtime")
@@ -113,8 +114,13 @@ def main() -> None:
         (ran if rc == 0 else failed).append(s["id"])
         if rc != 0:
             print(f"[fail] {s['id']} exited with {rc}; see its log. Continuing with the next step.")
+    # Summary steps (clean reports, tables) run at the end of every session, budget or not.
+    for s in steps:
+        if s.get("always") and (not args.only or s["id"] in args.only):
+            rc = run_step(s, args.govi)
+            (ran if rc == 0 else failed).append(s["id"])
     write_status(args.govi, steps, {"running": None, "gpu": gpu, "last_session": {"ran": ran, "failed": failed}})
-    remaining = [s["id"] for s in steps if not Path(s["done"]).exists()]
+    remaining = [s["id"] for s in steps if not Path(s["done"]).exists() and not s.get("always")]
     print(f"\nsession done. ran={ran} failed={failed}\nremaining={remaining}")
     sys.exit(1 if failed else 0)
 

@@ -66,3 +66,22 @@ def test_budget_stops_before_starting(tmp_path):
     (tmp_path / "runs").mkdir()
     r = _run(tmp_path, _plan(tmp_path), "--hours", "0")
     assert "[stop]" in r.stdout and not (tmp_path / "a.done").exists()
+
+
+def test_always_steps_run_even_when_budget_is_exhausted(tmp_path):
+    (tmp_path / "runs").mkdir()
+    plan = tmp_path / "plan2.yaml"
+    plan.write_text(textwrap.dedent(f"""
+        steps:
+          - {{id: big, gpu: false, hours: 5, cmd: '{PY} -c "print(1)"', done: "{{GOVI}}/big.done"}}
+          - id: summary
+            gpu: false
+            hours: 0.01
+            always: true
+            cmd: {PY} -c "open(r'{{GOVI}}/summary.txt','a').write('x')"
+            done: "{{GOVI}}/never"
+    """), encoding="utf-8")
+    _run(tmp_path, plan, "--hours", "0")
+    _run(tmp_path, plan, "--hours", "0")
+    assert (tmp_path / "summary.txt").read_text() == "xx"   # ran in both sessions
+    assert "[*] summary" in _run(tmp_path, plan, "--status").stdout

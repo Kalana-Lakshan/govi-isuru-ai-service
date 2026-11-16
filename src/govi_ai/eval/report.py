@@ -38,7 +38,8 @@ def crop_report(df: pd.DataFrame, emb: np.ndarray, logits: np.ndarray, classes: 
     ks = scores(te)
     in_dom_test = (df["split"] == "test").to_numpy()
     sets = {
-        "unknown_disease": ((df["crop"] == crop) & (df["role"] == "unknown_eval")).to_numpy(),
+        "unknown_disease": ((df["crop"] == crop) & (df["role"] == "unknown_eval")
+                            & (df[protocol] != "excluded")).to_numpy(),
         "other_crops": ((df["crop"] != crop) & (df["role"] == "known")).to_numpy() & in_dom_test,
         "other_plant": (df["role"] == "other_plant").to_numpy() & in_dom_test,
         "non_plant": (df["role"] == "non_plant").to_numpy() & in_dom_test,
@@ -76,7 +77,7 @@ def gate_report(df: pd.DataFrame, gate_logits: np.ndarray, gate_classes: list[st
     y = gate_idx[te]
     crops_i = [i for i, c in enumerate(gate_classes) if c not in ("other_plant", "non_plant")]
     leaf = np.isin(y, crops_i)
-    unk = (df["role"] == "unknown_eval").to_numpy()
+    unk = ((df["role"] == "unknown_eval") & (df["split"] != "excluded")).to_numpy()
     return {
         "accuracy": M.accuracy(y, pred), "macro_f1": M.macro_f1(y, pred, len(gate_classes)),
         "per_class_recall": dict(zip(gate_classes, np.nan_to_num(

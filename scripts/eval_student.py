@@ -55,6 +55,8 @@ def main() -> None:
     ap.add_argument("--all-sources", action="store_true")
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--exclude-file", type=Path,
+                    help="near_dup_exclusions.csv: also write report_clean.json without those test rows")
     args = ap.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -73,6 +75,26 @@ def main() -> None:
         outs = run_model(ckpt, df, args.data_root, args.batch_size, args.workers, device)
         np.savez(cache, sample_ids=df["sample_id"].to_numpy(dtype=str), **outs)
 
+    report = make_report(df, outs, space, protocol, ckpt)
+    (args.run / "report.json").write_text(json.dumps(report, indent=2, default=float), encoding="utf-8")
+    print(f"wrote {args.run / 'report.json'}")
+
+    if args.exclude_file and args.exclude_file.exists():
+        import csv
+
+        with args.exclude_file.open(newline="", encoding="utf-8") as f:
+            flagged = {r["sample_id"] for r in csv.DictReader(f) if r["protocol"] == protocol}
+        mask = df["sample_id"].isin(flagged).to_numpy()
+        clean = df.copy()
+        for col in {protocol, "split"}:
+            clean.loc[mask & clean[col].isin(["test", "unknown_eval"]).to_numpy(), col] = "excluded"
+        rep = make_report(clean, outs, space, protocol, ckpt)
+        rep["excluded_near_duplicates"] = int(mask.sum())
+        (args.run / "report_clean.json").write_text(json.dumps(rep, indent=2, default=float), encoding="utf-8")
+        print(f"wrote {args.run / 'report_clean.json'} ({int(mask.sum())} near-duplicate test rows excluded)")
+
+
+def make_report(df, outs, space, protocol, ckpt) -> dict:
     report = {"protocol": protocol, "student": ckpt["student"], "epoch": ckpt["epoch"], "crops": {},
               "gate": gate_report(df, outs["gate"], space.gate_classes, df["gate_idx"].to_numpy())}
     for crop, classes in space.crop_classes.items():
@@ -88,8 +110,7 @@ def main() -> None:
               f"nonplant={f('non_plant')}")
     g = report["gate"]
     print(f"gate  macroF1={g['macro_f1']:.3f} wrong_crop={g['wrong_crop_rate']} false_reject={g['false_reject_rate']}")
-    (args.run / "report.json").write_text(json.dumps(report, indent=2, default=float), encoding="utf-8")
-    print(f"wrote {args.run / 'report.json'}")
+    return report
 
 
 if __name__ == "__main__":
