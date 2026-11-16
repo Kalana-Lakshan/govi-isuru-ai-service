@@ -65,11 +65,20 @@ def bundle_dir(tmp_path_factory):
     return bundle, root
 
 
-def _jpeg(seed=1):
+def _jpeg(seed=1, size=(320, 240)):
     from PIL import Image
 
     buf = io.BytesIO()
-    Image.fromarray((np.random.default_rng(seed).random((80, 60, 3)) * 255).astype(np.uint8)).save(buf, "JPEG")
+    small = (np.random.default_rng(seed).random((size[1] // 8, size[0] // 8, 3)) * 255).astype(np.uint8)
+    Image.fromarray(small).resize(size, Image.Resampling.BICUBIC).save(buf, "JPEG")
+    return buf.getvalue()
+
+
+def _black_jpeg():
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (320, 240), (2, 2, 2)).save(buf, "JPEG")
     return buf.getvalue()
 
 
@@ -137,6 +146,8 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
                            files={"file": ("x.jpg", b"nope", "image/jpeg")}).status_code == 400
         assert client.post("/v1/disease/predict?crop=maize", headers=h,
                            files={"file": ("a.jpg", _jpeg(), "image/jpeg")}).status_code == 422
+        bad = client.post("/v1/disease/predict", headers=h, files={"file": ("b.jpg", _black_jpeg(), "image/jpeg")}).json()
+        assert bad["status"] == "BAD_PHOTO" and "too_dark" in bad["problems"] and bad["advice"]
 
         eng = main.engine()
         emb = eng.predict(_jpeg(3), return_embedding=True)["embedding_f16_base64"]
@@ -154,8 +165,34 @@ def test_fastapi_service(bundle_dir, tmp_path, monkeypatch):
         assert client.get("/v1/yield/history?district=Polonnaruwa", headers=h).json()["history"]["maha"]["2026"] == 6095
         assert "POLONNARUWA" in client.get("/v1/yield/districts", headers=h).json()["districts"]
 
+        cls = client.get("/v1/classes?crop=rice", headers=h).json()
+        assert "blast" in cls["classes"]
+        assert client.get("/v1/classes?crop=maize", headers=h).status_code == 404
+
+        embs = [eng.predict(_jpeg(s), return_embedding=True)["embedding_f16_base64"] for s in range(6)]
+        r = client.post("/v1/disease/unknowns/cluster", headers=h, json={
+            "crop": "rice", "cases": [{"id": f"c{i}", "embedding_f16_base64": e} for i, e in enumerate(embs)],
+            "threshold": 0.5, "min_size": 2}).json()
+        ids = [i for g in r["groups"] for i in g["member_ids"]] + r["ungrouped_ids"]
+        assert sorted(ids) == sorted(f"c{i}" for i in range(6))
+        assert all("closest_known" in g for g in r["groups"])
+
+        text = client.get("/metrics", headers=h).text
+        assert 'govi_predictions_total{status="BAD_PHOTO"} 1' in text
+
         r = client.post("/v1/suitability", headers=h,
                         json={"district": "Nuwara Eliya", "soil_ph": 5.0, "drainage": "good"}).json()
         assert r["ranking"][0]["crop"] == "tea" and r["inputs_used"]["climate_defaults_from"] == "ERA5 climatology"
         assert client.post("/v1/suitability", headers=h, json={"soil_ph": 5.0}).status_code == 422
         assert client.post("/v1/suitability", headers=h, json={"district": "Atlantis", "soil_ph": 5}).status_code == 404
+
+
+def test_dev_bundle_serves_with_warning(tmp_path):
+    from govi_ai.inference.engine import Engine
+
+    out = tmp_path / "devbundle"
+    _run([REPO / "scripts/make_dev_bundle.py", "--out", out, "--img-size", "64"])
+    for f in ("model.onnx", "decision.json", "preprocess.json", "classes.json"):
+        assert (out / f).exists(), f
+    r = Engine(out).predict(_jpeg())
+    assert r["model"]["version"] == "dev-random" and "random weights" in r["model"]["warning"]

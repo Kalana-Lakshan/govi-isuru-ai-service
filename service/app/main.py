@@ -18,14 +18,18 @@ import json
 import os
 import secrets
 import threading
+import time
+from collections import Counter
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
 import numpy as np
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
+from govi_ai.inference.clustering import cluster_cases, describe
 from govi_ai.inference.engine import Engine, InvalidImage
 
 BUNDLE_DIR = Path(os.getenv("GOVI_BUNDLE_DIR", "/app/bundle"))
@@ -36,6 +40,9 @@ THREADS = int(os.getenv("GOVI_THREADS", "1"))
 
 _engine: Engine | None = None
 _lock = threading.Lock()
+_metrics: dict = {"status": Counter(), "latency_ms_sum": 0.0, "requests": 0, "errors": Counter(),
+                  "started": time.time()}
+_classes: dict = {}
 
 
 def engine() -> Engine:
@@ -96,6 +103,9 @@ async def lifespan(app: FastAPI):
     app.state.officer_prototypes = _load_officer_prototypes(_engine)
     _yield = _load_yield()
     _suit = _load_suitability()
+    cf = BUNDLE_DIR / "classes.json"
+    _classes.clear()
+    _classes.update(json.loads(cf.read_text(encoding="utf-8")) if cf.exists() else {})
     yield
     _engine = None
 
@@ -110,7 +120,8 @@ def require_key(x_api_key: str | None = Header(default=None)) -> None:
 
 
 # ------------------------------------------------------------------ schemas
-Status = Literal["KNOWN_DISEASE", "UNKNOWN_DISEASE", "LOW_CONFIDENCE", "WRONG_CROP", "UNSUPPORTED_PLANT", "NOT_A_PLANT"]
+Status = Literal["KNOWN_DISEASE", "UNKNOWN_DISEASE", "LOW_CONFIDENCE", "WRONG_CROP", "UNSUPPORTED_PLANT", "NOT_A_PLANT",
+                 "BAD_PHOTO"]
 
 
 class PredictResponse(BaseModel):
@@ -126,6 +137,9 @@ class PredictResponse(BaseModel):
     gate: dict | None = None
     novelty: dict | None = None
     heatmap_png_base64: str | None = None
+    problems: list[str] | None = None
+    advice: list[str] | None = None
+    photo_quality: dict | None = None
     embedding_f16_base64: str | None = None
     model: dict
     latency_ms: float
@@ -176,9 +190,14 @@ def predict(file: UploadFile = File(...), crop: str | None = Query(default=None,
         raise HTTPException(413, f"image larger than {MAX_UPLOAD // (1024 * 1024)} MB")
     try:
         with _lock:  # decision state (officer prototypes) may change concurrently
-            return e.predict(data, crop=crop, heatmap=heatmap)
+            res = e.predict(data, crop=crop, heatmap=heatmap)
     except InvalidImage as err:
+        _metrics["errors"]["invalid_image"] += 1
         raise HTTPException(400, str(err)) from err
+    _metrics["status"][res["status"]] += 1
+    _metrics["requests"] += 1
+    _metrics["latency_ms_sum"] += res.get("latency_ms", 0.0)
+    return res
 
 
 def _yield_data() -> dict:
@@ -259,6 +278,77 @@ def suitability(req: SuitabilityRequest) -> dict:
                             "climate_defaults_from": "ERA5 climatology" if clim else None},
             "method": "FAO EcoCrop limiting-factor model; classes S1>=0.8, S2>=0.6, S3>=0.4, else N",
             **_suit["meta"]}
+
+
+@app.get("/v1/classes", dependencies=[Depends(require_key)])
+def classes(crop: str | None = None) -> dict:
+    """Class catalogue: type, known/unknown status, display names (en/si/ta) and agronomist advice.
+    Advice and Sinhala/Tamil names come only from configs/disease_info.yaml; empty means not yet provided."""
+    e = engine()
+    cat = _classes or {"crops": {c: {k: {"name": {"en": k}} for k in cal.classes} for c, cal in e.decision.crops.items()}}
+    crops = cat.get("crops", {})
+    if crop is not None:
+        if crop not in crops:
+            raise HTTPException(404, f"unknown crop {crop}")
+        return {"crop": crop, "classes": crops[crop]}
+    return cat
+
+
+class UnknownCase(BaseModel):
+    id: str = Field(min_length=1, max_length=128, description="backend's id for the stored case")
+    embedding_f16_base64: str
+
+
+class ClusterRequest(BaseModel):
+    crop: str
+    cases: list[UnknownCase] = Field(min_length=1, max_length=5000)
+    threshold: float = Field(default=0.8, ge=0.3, le=0.99, description="cosine similarity to join a group")
+    min_size: int = Field(default=3, ge=2, le=100)
+
+
+@app.post("/v1/disease/unknowns/cluster", dependencies=[Depends(require_key)])
+def cluster_unknowns(req: ClusterRequest) -> dict:
+    """Group stored UNKNOWN_DISEASE cases into candidate new diseases so officers review groups, not
+    single photos. Each group lists its members, the most central case and the closest known disease."""
+    e = engine()
+    cal = e.decision.crops.get(req.crop)
+    if cal is None:
+        raise HTTPException(422, f"crop must be one of {list(e.decision.crops)}")
+    dim = cal.means.shape[1]
+    try:
+        emb = np.stack([np.frombuffer(base64.b64decode(c.embedding_f16_base64), dtype=np.float16) for c in req.cases])
+    except ValueError as err:
+        raise HTTPException(422, "embeddings must be base64 float16 vectors from /v1/disease/predict") from err
+    if emb.shape[1] != dim:
+        raise HTTPException(422, f"embedding size {emb.shape[1]} != model's {dim}")
+    emb = emb.astype(np.float32)
+    groups, noise = cluster_cases(emb, req.threshold, req.min_size)
+    out = []
+    for i, (g, info) in enumerate(zip(groups, describe(emb, groups))):
+        centroid = emb[g].mean(0).astype(np.float64)
+        d = cal.distances(centroid)
+        nearest = int(d.argmin())
+        out.append({"group": i, "size": info["size"], "cohesion": info["cohesion"],
+                    "representative_id": req.cases[info["representative"]].id,
+                    "member_ids": [req.cases[j].id for j in g],
+                    "closest_known": {"class": cal.proto_labels[nearest], "mahalanobis_score": float(-d[nearest]),
+                                      "unknown_threshold": cal.unknown_threshold}})
+    return {"crop": req.crop, "groups": out, "ungrouped_ids": [req.cases[j].id for j in noise],
+            "threshold": req.threshold, "min_size": req.min_size}
+
+
+@app.get("/metrics", response_class=PlainTextResponse, dependencies=[Depends(require_key)])
+def metrics() -> str:
+    """Prometheus text format: request counts per status, mean latency, uptime."""
+    m = _metrics
+    lines = ["# TYPE govi_predictions_total counter"]
+    lines += [f'govi_predictions_total{{status="{k}"}} {v}' for k, v in sorted(m["status"].items())]
+    lines += ["# TYPE govi_errors_total counter"]
+    lines += [f'govi_errors_total{{kind="{k}"}} {v}' for k, v in sorted(m["errors"].items())]
+    lines += ["# TYPE govi_latency_ms_mean gauge",
+              f"govi_latency_ms_mean {m['latency_ms_sum'] / m['requests'] if m['requests'] else 0:.1f}",
+              "# TYPE govi_uptime_seconds gauge", f"govi_uptime_seconds {time.time() - m['started']:.0f}"]
+    return "\n".join(lines) + "\n"
 
 
 @app.post("/v1/disease/prototypes", dependencies=[Depends(require_key)])

@@ -19,57 +19,9 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from govi_ai.calibrate import fit_bundle  # noqa: E402
+from govi_ai.export import export_onnx, exportable, quantize_int8  # noqa: E402
 from govi_ai.manifest import load_manifest  # noqa: E402
 from govi_ai.train.data import LabelSpace  # noqa: E402
-
-
-class _Exportable:
-    """Wraps the student so ONNX gets a flat tuple of named outputs."""
-
-    @staticmethod
-    def build(model, crops):
-        import torch
-
-        class Wrapper(torch.nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.m = model
-
-            def forward(self, image):
-                out = self.m(image)
-                return (out["gate"], *[out["disease"][c] for c in crops], out["emb"], out["fmap"])
-
-        return Wrapper().eval()
-
-
-def export_onnx(model, crops, img_size: int, path: Path) -> list[str]:
-    import torch
-
-    names = ["gate", *[f"disease_{c}" for c in crops], "emb", "fmap"]
-    torch.onnx.export(_Exportable.build(model, crops), torch.zeros(1, 3, img_size, img_size), str(path),
-                      input_names=["image"], output_names=names, opset_version=17, dynamo=False,
-                      dynamic_axes={"image": {0: "batch"}, **{n: {0: "batch"} for n in names}})
-    return names
-
-
-def quantize_int8(fp32: Path, int8: Path, calib: list[np.ndarray]) -> None:
-    from onnxruntime.quantization import CalibrationDataReader, QuantFormat, QuantType, quantize_static
-    from onnxruntime.quantization.shape_inference import quant_pre_process
-
-    class Reader(CalibrationDataReader):
-        def __init__(self):
-            self.it = iter([{"image": x} for x in calib])
-
-        def get_next(self):
-            return next(self.it, None)
-
-    pre = fp32.with_suffix(".pre.onnx")
-    quant_pre_process(str(fp32), str(pre), skip_symbolic_shape=True)
-    # Weights INT8 per channel; heads and the outputs used for open-set scoring keep FP32 precision
-    # through QDQ dequantisation at the graph outputs.
-    quantize_static(str(pre), str(int8), Reader(), quant_format=QuantFormat.QDQ, per_channel=True,
-                    activation_type=QuantType.QUInt8, weight_type=QuantType.QInt8)
-    pre.unlink(missing_ok=True)
 
 
 def main() -> None:
@@ -89,6 +41,9 @@ def main() -> None:
     ap.add_argument("--calib-images", type=int, default=256)
     ap.add_argument("--parity-images", type=int, default=512)
     ap.add_argument("--no-int8", action="store_true")
+    ap.add_argument("--yield-dir", type=Path, help="output of train_yield.py (forecasts/history/backtest)")
+    ap.add_argument("--suitability-dir", type=Path, help="output of build_suitability.py")
+    ap.add_argument("--quality", type=Path, help="quality.json from calibrate_quality.py")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -110,6 +65,14 @@ def main() -> None:
                                     known_tpr=args.known_tpr, target_risk=args.target_risk, version=args.version)
     bundle.meta.update({"student": ckpt["student"], "timm_id": ckpt["timm_id"], "trained_epoch": ckpt["epoch"]})
     bundle.save(args.out)
+    from govi_ai.bundle import add_extras
+    from govi_ai.taxonomy import load_taxonomy
+
+    if args.quality and args.quality.exists():
+        import shutil
+
+        shutil.copy2(args.quality, args.out / "quality.json")
+    add_extras(args.out, load_taxonomy(), args.yield_dir, args.suitability_dir)
     (args.out / "preprocess.json").write_text(json.dumps(
         {"img_size": ckpt["img_size"], "mean": list(ckpt["mean"]), "std": list(ckpt["std"]), "crops": crops}, indent=2))
 
@@ -135,7 +98,7 @@ def main() -> None:
 
     xs = batch(test_paths or val_paths, args.parity_images)
     with torch.inference_mode():
-        ref = [_Exportable.build(model, crops)(torch.from_numpy(x)) for x in xs]
+        ref = [exportable(model, crops)(torch.from_numpy(x)) for x in xs]
     for name in ("model.onnx", "model.int8.onnx"):
         if not (args.out / name).exists() or not xs:
             continue

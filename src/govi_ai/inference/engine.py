@@ -4,6 +4,8 @@ A *bundle* directory contains:
     model.onnx | model.int8.onnx   outputs: gate, disease_<crop>..., emb, fmap
     preprocess.json                img_size, mean, std, crops
     decision.json + prototypes_<crop>.npz   (DecisionBundle)
+    quality.json                   photo-quality thresholds (optional; conservative defaults otherwise)
+    classes.json, yield/, suitability/      served by the API (optional)
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from govi_ai.inference.decision import DecisionBundle
+from govi_ai.inference.quality import ADVICE, QualityThresholds, assess
 
 MAX_PIXELS = 40_000_000
 
@@ -82,6 +85,8 @@ class Engine:
         self.session = ort.InferenceSession(str(d / model_file), opts, providers=["CPUExecutionProvider"])
         self.model_file = model_file
         self.output_names = [o.name for o in self.session.get_outputs()]
+        self.quality = QualityThresholds.load(d / "quality.json")
+        self.warning = self.decision.meta.get("warning")
 
     def run(self, x: np.ndarray) -> dict[str, np.ndarray]:
         return dict(zip(self.output_names, self.session.run(None, {"image": x})))
@@ -89,6 +94,12 @@ class Engine:
     def predict(self, data: bytes, crop: str | None = None, heatmap: bool = True, return_embedding: bool = False) -> dict:
         t0 = time.perf_counter()
         img = load_image(data)
+        problems, quality = assess(img, self.quality)
+        if problems:  # no model run: a photo nobody could diagnose
+            res = {"status": "BAD_PHOTO", "problems": problems, "advice": [ADVICE[p] for p in problems],
+                   "photo_quality": quality, "model": {"file": self.model_file, "version": self.decision.version}}
+            res["latency_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            return res
         out = self.run(preprocess(img, self.img_size, self.mean, self.std))
         disease = {c: out[f"disease_{c}"][0] for c in self.crops}
         res = self.decision.decide(out["gate"][0], disease, out["emb"][0], requested_crop=crop)
@@ -102,6 +113,9 @@ class Engine:
             # Stored by the backend so officers can review / cluster unknown cases and register
             # a confirmed new disease in the prototype library.
             res["embedding_f16_base64"] = base64.b64encode(out["emb"][0].astype(np.float16).tobytes()).decode()
+        res["photo_quality"] = quality
         res["model"] = {"file": self.model_file, "version": self.decision.version}
+        if self.warning:
+            res["model"]["warning"] = self.warning
         res["latency_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         return res

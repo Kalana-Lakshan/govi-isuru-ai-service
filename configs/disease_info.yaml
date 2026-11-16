@@ -1,0 +1,50 @@
+# Disease display names and farmer advice per class, served by GET /v1/classes.
+# MUST be filled in by an agronomist / Department of Agriculture officer. The service never
+# generates advice; empty fields are returned empty. Cite the source of every advice text.
+#   si / ta      Sinhala / Tamil display names
+#   advice_en / advice_si / advice_ta   short, actionable advice (2-4 sentences)
+#   source       e.g. 'DOA Rice Research and Development Institute, 2025 guide'
+crops:
+  rice:
+    healthy: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    bacterial_leaf_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    bacterial_leaf_streak: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    bacterial_panicle_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    blast: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    brown_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    narrow_brown_leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    leaf_scald: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    sheath_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    downy_mildew: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    tungro: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    hispa: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    dead_heart: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    leaffolder: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    leaf_smut: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+  tea:
+    healthy: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    blister_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    brown_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    gray_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    red_rust: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    algal_leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    red_leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    helopeltis: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    red_spider_mite: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    green_mirid_bug: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    anthracnose: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    bird_eye_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    white_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    red_scab: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+  chili:
+    healthy: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    powdery_mildew: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    leaf_curl: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    mites_thrips: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    nutrient_deficiency: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    yellow_leaf_virus: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    bacterial_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    broad_bean_wilt_virus: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    flood_stress: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    white_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
