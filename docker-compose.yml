@@ -1,0 +1,24 @@
+# Run the AI service locally or next to the Govi Isuru backend.
+#   1. put a bundle in ./bundle  (real: from Colab; dev: python scripts/make_dev_bundle.py --out bundle)
+#   2. GOVI_API_KEY=change-me docker compose up --build
+# The backend then calls http://ai-service:8000 (same compose network) with header X-API-Key.
+services:
+  ai-service:
+    build:
+      context: .
+      dockerfile: service/Dockerfile
+    image: govi-ai-service:latest
+    ports:
+      - "8000:8000"
+    environment:
+      GOVI_API_KEY: ${GOVI_API_KEY:?set GOVI_API_KEY}
+      GOVI_THREADS: "1"
+      GOVI_MAX_UPLOAD_MB: "10"
+    volumes:
+      - govi-state:/app/state   # officer-registered prototypes survive restarts
+    mem_limit: 512m             # the service targets < 300 MB; this guards against regressions
+    cpus: 1.0
+    restart: unless-stopped
+
+volumes:
+  govi-state:

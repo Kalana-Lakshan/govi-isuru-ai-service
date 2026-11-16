@@ -1,0 +1,47 @@
+name: Docker image
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "service/**", "pyproject.toml", ".github/workflows/docker.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build a development bundle (random weights, CPU torch)
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          pip install -e ".[train]"
+          python scripts/make_dev_bundle.py --out bundle --img-size 224
+      - name: Build image
+        run: docker build -f service/Dockerfile -t govi-ai-service:ci .
+      - name: Run and check memory / endpoints
+        run: |
+          docker run -d --name ai -p 8000:8000 -e GOVI_API_KEY=ci --memory 512m govi-ai-service:ci
+          for i in $(seq 1 30); do curl -sf localhost:8000/ready && break; sleep 2; done
+          python - <<'EOF'
+          import io, json, urllib.request
+          from PIL import Image
+          import numpy as np
+          buf = io.BytesIO()
+          Image.fromarray((np.random.default_rng(0).random((40, 40, 3)) * 255).astype("uint8")).resize((320, 240)).save(buf, "JPEG")
+          boundary = "x1x"
+          body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.jpg\"\r\n"
+                  "Content-Type: image/jpeg\r\n\r\n").encode() + buf.getvalue() + f"\r\n--{boundary}--\r\n".encode()
+          req = urllib.request.Request("http://localhost:8000/v1/disease/predict?crop=rice", data=body,
+                                       headers={"X-API-Key": "ci", "Content-Type": f"multipart/form-data; boundary={boundary}"})
+          r = json.loads(urllib.request.urlopen(req).read())
+          print(r["status"], r["latency_ms"], r["model"])
+          assert "warning" in r["model"]
+          EOF
+          docker stats --no-stream --format "{{.Name}} mem={{.MemUsage}}" ai
+          docker images govi-ai-service:ci --format "image size={{.Size}}"

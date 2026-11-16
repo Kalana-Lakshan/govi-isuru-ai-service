@@ -1,0 +1,1186 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "Govi Isuru AI service",
+  "description": "Crop gate + open-set disease recognition for rice, tea and chili.",
+  "version": "1.0.0"
+ },
+ "paths": {
+  "/health": {
+   "get": {
+    "summary": "Health",
+    "operationId": "health_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Health Health Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/ready": {
+   "get": {
+    "summary": "Ready",
+    "operationId": "ready_ready_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Ready Ready Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/metadata": {
+   "get": {
+    "summary": "Metadata",
+    "operationId": "metadata_v1_metadata_get",
+    "parameters": [
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Metadata V1 Metadata Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/disease/predict": {
+   "post": {
+    "summary": "Predict",
+    "operationId": "predict_v1_disease_predict_post",
+    "parameters": [
+     {
+      "name": "crop",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "crop the farmer selected",
+       "title": "Crop"
+      },
+      "description": "crop the farmer selected"
+     },
+     {
+      "name": "heatmap",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": true,
+       "title": "Heatmap"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_predict_v1_disease_predict_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PredictResponse"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/yield/districts": {
+   "get": {
+    "summary": "Yield Districts",
+    "operationId": "yield_districts_v1_yield_districts_get",
+    "parameters": [
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Yield Districts V1 Yield Districts Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/yield/forecast": {
+   "get": {
+    "summary": "Yield Forecast",
+    "description": "Next-season paddy yield for a district (official DCS data, 5-year climatology + calibrated 80 % interval).\nWith ``area_ha`` the expected harvest in kg is returned as well.",
+    "operationId": "yield_forecast_v1_yield_forecast_get",
+    "parameters": [
+     {
+      "name": "district",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "District"
+      }
+     },
+     {
+      "name": "season",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "enum": [
+        "maha",
+        "yala"
+       ],
+       "type": "string",
+       "title": "Season"
+      }
+     },
+     {
+      "name": "area_ha",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number",
+         "maximum": 100000,
+         "exclusiveMinimum": 0
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Area Ha"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Yield Forecast V1 Yield Forecast Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/yield/history": {
+   "get": {
+    "summary": "Yield History",
+    "operationId": "yield_history_v1_yield_history_get",
+    "parameters": [
+     {
+      "name": "district",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "District"
+      }
+     },
+     {
+      "name": "season",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "maha",
+          "yala"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Season"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Yield History V1 Yield History Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/suitability": {
+   "post": {
+    "summary": "Suitability",
+    "description": "Rank rice / tea / chili with the FAO EcoCrop limiting-factor model (real ECOCROP requirements).",
+    "operationId": "suitability_v1_suitability_post",
+    "parameters": [
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SuitabilityRequest"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Suitability V1 Suitability Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/classes": {
+   "get": {
+    "summary": "Classes",
+    "description": "Class catalogue: type, known/unknown status, display names (en/si/ta) and agronomist advice.\nAdvice and Sinhala/Tamil names come only from configs/disease_info.yaml; empty means not yet provided.",
+    "operationId": "classes_v1_classes_get",
+    "parameters": [
+     {
+      "name": "crop",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Crop"
+      }
+     },
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Classes V1 Classes Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/disease/unknowns/cluster": {
+   "post": {
+    "summary": "Cluster Unknowns",
+    "description": "Group stored UNKNOWN_DISEASE cases into candidate new diseases so officers review groups, not\nsingle photos. Each group lists its members, the most central case and the closest known disease.",
+    "operationId": "cluster_unknowns_v1_disease_unknowns_cluster_post",
+    "parameters": [
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ClusterRequest"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Cluster Unknowns V1 Disease Unknowns Cluster Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/metrics": {
+   "get": {
+    "summary": "Metrics",
+    "description": "Prometheus text format: request counts per status, mean latency, uptime.",
+    "operationId": "metrics_metrics_get",
+    "parameters": [
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "text/plain": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/disease/prototypes": {
+   "post": {
+    "summary": "Register Prototype",
+    "description": "Officer-verified new disease: adds a prototype so it is recognised immediately (no retraining).",
+    "operationId": "register_prototype_v1_disease_prototypes_post",
+    "parameters": [
+     {
+      "name": "x-api-key",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Api-Key"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PrototypeRequest"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Register Prototype V1 Disease Prototypes Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "Body_predict_v1_disease_predict_post": {
+    "properties": {
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     }
+    },
+    "type": "object",
+    "required": [
+     "file"
+    ],
+    "title": "Body_predict_v1_disease_predict_post"
+   },
+   "ClusterRequest": {
+    "properties": {
+     "crop": {
+      "type": "string",
+      "title": "Crop"
+     },
+     "cases": {
+      "items": {
+       "$ref": "#/components/schemas/UnknownCase"
+      },
+      "type": "array",
+      "maxItems": 5000,
+      "minItems": 1,
+      "title": "Cases"
+     },
+     "threshold": {
+      "type": "number",
+      "maximum": 0.99,
+      "minimum": 0.3,
+      "title": "Threshold",
+      "description": "cosine similarity to join a group",
+      "default": 0.8
+     },
+     "min_size": {
+      "type": "integer",
+      "maximum": 100.0,
+      "minimum": 2.0,
+      "title": "Min Size",
+      "default": 3
+     }
+    },
+    "type": "object",
+    "required": [
+     "crop",
+     "cases"
+    ],
+    "title": "ClusterRequest"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "PredictResponse": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "enum": [
+       "KNOWN_DISEASE",
+       "UNKNOWN_DISEASE",
+       "LOW_CONFIDENCE",
+       "WRONG_CROP",
+       "UNSUPPORTED_PLANT",
+       "NOT_A_PLANT",
+       "BAD_PHOTO"
+      ],
+      "title": "Status"
+     },
+     "crop": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Crop"
+     },
+     "requested_crop": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requested Crop"
+     },
+     "detected_crop": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Detected Crop"
+     },
+     "class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Class"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "top3": {
+      "anyOf": [
+       {
+        "items": {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Top3"
+     },
+     "gate": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gate"
+     },
+     "novelty": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Novelty"
+     },
+     "heatmap_png_base64": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Heatmap Png Base64"
+     },
+     "problems": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Problems"
+     },
+     "advice": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Advice"
+     },
+     "photo_quality": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Photo Quality"
+     },
+     "embedding_f16_base64": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Embedding F16 Base64"
+     },
+     "model": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Model"
+     },
+     "latency_ms": {
+      "type": "number",
+      "title": "Latency Ms"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status",
+     "model",
+     "latency_ms"
+    ],
+    "title": "PredictResponse"
+   },
+   "PrototypeRequest": {
+    "properties": {
+     "crop": {
+      "type": "string",
+      "title": "Crop"
+     },
+     "label": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "title": "Label",
+      "description": "snake_case id agreed by the officer"
+     },
+     "embeddings_f16_base64": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 200,
+      "minItems": 1,
+      "title": "Embeddings F16 Base64",
+      "description": "embeddings returned by /v1/disease/predict for confirmed cases"
+     }
+    },
+    "type": "object",
+    "required": [
+     "crop",
+     "label",
+     "embeddings_f16_base64"
+    ],
+    "title": "PrototypeRequest"
+   },
+   "SuitabilityRequest": {
+    "properties": {
+     "district": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "District",
+      "description": "fills climate and altitude defaults from ERA5 climatology"
+     },
+     "season": {
+      "type": "string",
+      "enum": [
+       "maha",
+       "yala"
+      ],
+      "title": "Season",
+      "default": "maha"
+     },
+     "soil_ph": {
+      "type": "number",
+      "maximum": 10.0,
+      "minimum": 3.0,
+      "title": "Soil Ph"
+     },
+     "temperature_c": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 45.0,
+        "minimum": -5.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Temperature C"
+     },
+     "season_rainfall_mm": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 6000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Season Rainfall Mm"
+     },
+     "annual_rainfall_mm": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 8000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Annual Rainfall Mm"
+     },
+     "irrigated": {
+      "type": "boolean",
+      "title": "Irrigated",
+      "default": false
+     },
+     "drainage": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "poor",
+         "moderate",
+         "good",
+         "excessive"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Drainage"
+     },
+     "texture": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "clay",
+         "clay_loam",
+         "loam",
+         "sandy_loam",
+         "sandy",
+         "organic"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Texture"
+     },
+     "altitude_m": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 3000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Altitude M"
+     }
+    },
+    "type": "object",
+    "required": [
+     "soil_ph"
+    ],
+    "title": "SuitabilityRequest"
+   },
+   "UnknownCase": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Id",
+      "description": "backend's id for the stored case"
+     },
+     "embedding_f16_base64": {
+      "type": "string",
+      "title": "Embedding F16 Base64"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "embedding_f16_base64"
+    ],
+    "title": "UnknownCase"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   }
+  }
+ }
+}

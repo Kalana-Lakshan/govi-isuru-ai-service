@@ -13,4 +13,3 @@ docs
 *.pt
 *.keras
 bundle/*.pre.onnx
-bundle/model.onnx
