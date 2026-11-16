@@ -94,6 +94,7 @@ def main() -> None:
             print(f"[{mark}] {s['id']:24s} gpu={s.get('gpu', False)}  ~{s.get('hours')} h")
         return
 
+    by_id = {s["id"]: s for s in steps}
     t0 = time.time()
     ran, failed = [], []
     for s in steps:
@@ -103,6 +104,10 @@ def main() -> None:
             continue
         if s.get("gpu") and not gpu:
             print(f"[skip] {s['id']} needs a GPU runtime")
+            continue
+        waiting = [n for n in s.get("needs", []) if n in by_id and not Path(by_id[n]["done"]).exists()]
+        if waiting:
+            print(f"[wait] {s['id']} needs {', '.join(waiting)} to finish first")
             continue
         left = args.hours - (time.time() - t0) / 3600
         # Training steps resume, so starting one late is fine as long as at least an epoch fits.

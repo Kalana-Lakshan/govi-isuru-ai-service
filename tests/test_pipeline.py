@@ -85,3 +85,21 @@ def test_always_steps_run_even_when_budget_is_exhausted(tmp_path):
     _run(tmp_path, plan, "--hours", "0")
     assert (tmp_path / "summary.txt").read_text() == "xx"   # ran in both sessions
     assert "[*] summary" in _run(tmp_path, plan, "--status").stdout
+
+
+def test_needs_waits_for_prerequisite(tmp_path):
+    (tmp_path / "runs").mkdir()
+    plan = tmp_path / "plan3.yaml"
+    plan.write_text(textwrap.dedent(f"""
+        steps:
+          - {{id: train, gpu: true, hours: 0.1, cmd: '{PY} -c "print(1)"', done: "{{GOVI}}/train.done"}}
+          - id: bundle
+            gpu: false
+            hours: 0.1
+            needs: [train]
+            cmd: {PY} -c "import sys; sys.exit(5)"
+            done: "{{GOVI}}/bundle.done"
+    """), encoding="utf-8")
+    r = _run(tmp_path, plan)
+    assert "[wait] bundle needs train" in r.stdout
+    assert r.returncode == 0, r.stdout + r.stderr

@@ -1,7 +1,7 @@
 # Experiment plan for Colab free tier. Steps run in order; a step is "done" when its `done` file
 # exists on Drive, so every session simply continues where the last one stopped.
 # Placeholders: {DATA} local dataset dir, {GOVI} Drive project dir, {FEATS} {GOVI}/features, {RUNS} {GOVI}/runs
-# `gpu: true` steps are skipped on a CPU runtime; `always: true` steps run at the end of every session. `hours` is a rough T4 estimate used to avoid
+# `needs: [ids]` waits for those steps' done files; `gpu: true` steps are skipped on a CPU runtime; `always: true` steps run at the end of every session. `hours` is a rough T4 estimate used to avoid
 # starting a step that cannot finish inside the remaining session budget (training resumes anyway).
 
 teacher: [dinov2_b, clip_b16]
@@ -14,11 +14,13 @@ steps:
     cmd: python scripts/extract_features.py --data-root {DATA} --out {FEATS} --backbones dinov2_b clip_b16 effnet_b0 mnv4_s --batch-size 128 --workers 2
     done: "{FEATS}/mnv4_s.npz"
   - id: near_dup_audit
+    needs: [features]
     gpu: false
     hours: 0.2
     cmd: python scripts/near_dup_audit.py --data-root {DATA} --features {FEATS} --backbone dinov2_b --out {GOVI}/audit
     done: "{GOVI}/audit/summary.json"
   - id: probes
+    needs: [features]
     gpu: false
     hours: 0.4
     cmd: >-
@@ -31,6 +33,7 @@ steps:
 
   # ---------------------------------------------------------------- phase 3: main student
   - id: student_main
+    needs: [features]
     gpu: true
     hours: 2.0
     cmd: >-
@@ -41,6 +44,7 @@ steps:
 
   # ---------------------------------------------------------------- phases 4-5: serving bundle
   - id: bundle_v1
+    needs: [student_main]
     gpu: false
     hours: 0.3
     cmd: >-
@@ -50,11 +54,13 @@ steps:
 
   # ---------------------------------------------------------------- paper analyses on the main model
   - id: officer_loop
+    needs: [student_main]
     gpu: false
     hours: 0.3
     cmd: python scripts/officer_loop_experiment.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/officer
     done: "{GOVI}/officer/officer_loop.json"
   - id: xai
+    needs: [student_main]
     gpu: true
     hours: 0.4
     cmd: python scripts/xai_figures.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/xai --per-crop 60
