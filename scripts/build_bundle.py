@@ -38,7 +38,9 @@ def main() -> None:
     ap.add_argument("--all-sources", action="store_true")
     ap.add_argument("--known-tpr", type=float, default=0.95)
     ap.add_argument("--target-risk", type=float, default=0.05)
-    ap.add_argument("--mahalanobis-only", action="store_true", help="v1 behaviour: Mahalanobis decides unknowns")
+    ap.add_argument("--choose-novelty", action="store_true",
+                    help="pick each crop's unknown score by leave-one-class-out on validation (experimental: it "
+                         "favoured softmax confidence, which helped tea but hurt rice on real unknowns)")
     ap.add_argument("--calib-images", type=int, default=256)
     ap.add_argument("--parity-images", type=int, default=512)
     ap.add_argument("--no-int8", action="store_true")
@@ -63,7 +65,7 @@ def main() -> None:
     outs = {k: z[k] for k in z.files if k != "sample_ids"}
     heads = {c: torch.nn.functional.normalize(model.heads[c].weight, dim=1).detach().numpy() for c in crops}
     bundle, cal_report = fit_bundle(df, outs, space.gate_classes, space.crop_classes, ckpt["protocol"], heads,
-                                    known_tpr=args.known_tpr, target_risk=args.target_risk, version=args.version, choose_score=not args.mahalanobis_only)
+                                    known_tpr=args.known_tpr, target_risk=args.target_risk, version=args.version, choose_score=args.choose_novelty)
     bundle.meta.update({"student": ckpt["student"], "timm_id": ckpt["timm_id"], "trained_epoch": ckpt["epoch"]})
     bundle.save(args.out)
     from govi_ai.bundle import add_extras

@@ -82,7 +82,7 @@ def coverage_table(conf: np.ndarray, correct: np.ndarray,
 def fit_bundle(df: pd.DataFrame, outs: dict, gate_classes: list[str], crop_classes: dict[str, list[str]],
                protocol: str = "split", head_weights: dict[str, np.ndarray] | None = None,
                known_tpr: float = 0.95, target_risk: float = 0.05, gate_keep: float = 0.99,
-               version: str = "dev", choose_score: bool = True) -> tuple[DecisionBundle, dict]:
+               version: str = "dev", choose_score: bool = False) -> tuple[DecisionBundle, dict]:
     """``df`` rows are aligned with ``outs`` arrays (emb, gate, disease_<crop>) and encoded with
     ``LabelSpace.encode`` (gate_idx, disease_idx)."""
     trainable = (df["role"] != "unknown_eval").to_numpy()

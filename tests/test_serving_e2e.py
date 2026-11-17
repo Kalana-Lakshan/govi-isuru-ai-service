@@ -196,3 +196,20 @@ def test_dev_bundle_serves_with_warning(tmp_path):
         assert (out / f).exists(), f
     r = Engine(out).predict(_jpeg())
     assert r["model"]["version"] == "dev-random" and "random weights" in r["model"]["warning"]
+
+
+def test_heatmap_request_with_every_answer_type(bundle_dir, monkeypatch):
+    """Regression: answers without a diagnosed crop (crop uncertain, wrong crop...) must not break heatmaps."""
+    from govi_ai.inference.engine import Engine
+
+    eng = Engine(bundle_dir[0])
+    answers = [
+        {"status": "LOW_CONFIDENCE", "reason": "crop_uncertain", "detected_crop": "rice", "confidence": 0.5, "gate": {}},
+        {"status": "LOW_CONFIDENCE", "reason": "crop_not_calibrated", "detected_crop": "tea", "confidence": 0.9, "gate": {}},
+        {"status": "WRONG_CROP", "requested_crop": "rice", "detected_crop": "tea", "confidence": 0.9, "gate": {}},
+        {"status": "NOT_A_PLANT", "confidence": 0.9, "gate": {}},
+    ]
+    for ans in answers:
+        monkeypatch.setattr(eng.decision, "decide", lambda *a, _ans=ans, **k: dict(_ans))
+        r = eng.predict(_jpeg(), crop="rice", heatmap=True)
+        assert r["status"] == ans["status"] and "heatmap_png_base64" not in r

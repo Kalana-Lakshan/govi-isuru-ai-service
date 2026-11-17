@@ -56,9 +56,9 @@ steps:
     needs: [student_main]
     gpu: false
     hours: 0.4
-    # per-crop unknown-disease score (leave-one-class-out on validation) + risk/coverage options
+    # experiment: per-crop unknown score chosen by leave-one-class-out on validation (see RESULTS)
     cmd: >-
-      python scripts/build_bundle.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/bundles/v2 --version v2
+      python scripts/build_bundle.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/bundles/v2 --version v2 --choose-novelty
       --yield-dir {IN}/tabular/yield --suitability-dir {IN}/tabular/suitability --quality {IN}/tabular/quality.json
     done: "{GOVI}/bundles/v2/bundle_report.json"
 

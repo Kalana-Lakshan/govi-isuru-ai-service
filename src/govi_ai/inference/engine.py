@@ -104,7 +104,8 @@ class Engine:
         disease = {c: out[f"disease_{c}"][0] for c in self.crops}
         res = self.decision.decide(out["gate"][0], disease, out["emb"][0], requested_crop=crop)
         status = res["status"]
-        if heatmap and status in ("KNOWN_DISEASE", "LOW_CONFIDENCE", "UNKNOWN_DISEASE"):
+        # A heatmap needs a diagnosed crop: "crop uncertain" / "crop not calibrated" answers have none.
+        if heatmap and status in ("KNOWN_DISEASE", "LOW_CONFIDENCE", "UNKNOWN_DISEASE")                 and res.get("crop") in self.decision.crops and res.get("top3"):
             cal = self.decision.crops[res["crop"]]
             cls = res.get("class") if res.get("source") == "model" else res["top3"][0]["class"]
             if cal.head_weights is not None and cls in cal.classes:
