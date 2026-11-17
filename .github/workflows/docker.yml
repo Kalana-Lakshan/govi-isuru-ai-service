@@ -3,7 +3,7 @@ name: Docker image
 on:
   push:
     branches: [main]
-    paths: ["src/**", "service/**", "bundle/**", "pyproject.toml", ".github/workflows/docker.yml"]
+    paths: ["Dockerfile", "src/**", "service/**", "bundle/**", "pyproject.toml", ".github/workflows/docker.yml"]
   workflow_dispatch:
 
 permissions:
