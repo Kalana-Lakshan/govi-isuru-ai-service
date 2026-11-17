@@ -1,6 +1,7 @@
 # Experiment plan for Colab free tier. Steps run in order; a step is "done" when its `done` file
 # exists on Drive, so every session simply continues where the last one stopped.
-# Placeholders: {DATA} local dataset dir, {GOVI} Drive project dir, {FEATS} {GOVI}/features, {RUNS} {GOVI}/runs
+# Placeholders: {DATA} local dataset dir, {GOVI} Drive output dir, {IN} shared inputs dir (= {GOVI} unless --inputs),
+#   {FEATS} {IN}/features, {RUNS} {GOVI}/runs
 # `needs: [ids]` waits for those steps' done files; `gpu: true` steps are skipped on a CPU runtime; `always: true` steps run at the end of every session. `hours` is a rough T4 estimate used to avoid
 # starting a step that cannot finish inside the remaining session budget (training resumes anyway).
 
@@ -17,8 +18,8 @@ steps:
     needs: [features]
     gpu: false
     hours: 0.2
-    cmd: python scripts/near_dup_audit.py --data-root {DATA} --features {FEATS} --backbone dinov2_b --out {GOVI}/audit
-    done: "{GOVI}/audit/summary.json"
+    cmd: python scripts/near_dup_audit.py --data-root {DATA} --features {FEATS} --backbone dinov2_b --out {IN}/audit
+    done: "{IN}/audit/summary.json"
   - id: probes
     needs: [features]
     gpu: false
@@ -39,7 +40,7 @@ steps:
     cmd: >-
       python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
       --student mnv4_s --protocol split --epochs 25 --workers 2 --out {RUNS}/mnv4_s_split &&
-      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/mnv4_s_split --workers 2 --exclude-file {GOVI}/audit/near_dup_exclusions.csv
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/mnv4_s_split --workers 2 --exclude-file {IN}/audit/near_dup_exclusions.csv
     done: "{RUNS}/mnv4_s_split/report.json"
 
   # ---------------------------------------------------------------- phases 4-5: serving bundle
@@ -49,7 +50,7 @@ steps:
     hours: 0.3
     cmd: >-
       python scripts/build_bundle.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/bundles/v1 --version v1
-      --yield-dir {GOVI}/tabular/yield --suitability-dir {GOVI}/tabular/suitability --quality {GOVI}/tabular/quality.json
+      --yield-dir {IN}/tabular/yield --suitability-dir {IN}/tabular/suitability --quality {IN}/tabular/quality.json
     done: "{GOVI}/bundles/v1/bundle_report.json"
 
   # ---------------------------------------------------------------- paper analyses on the main model
@@ -73,7 +74,7 @@ steps:
     cmd: >-
       python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher none --student mnv4_s
       --protocol split --epochs 20 --workers 2 --out {RUNS}/abl_no_kd &&
-      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_kd --workers 2 --exclude-file {GOVI}/audit/near_dup_exclusions.csv
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_kd --workers 2 --exclude-file {IN}/audit/near_dup_exclusions.csv
     done: "{RUNS}/abl_no_kd/report.json"
   - id: abl_no_oe
     gpu: true
@@ -81,7 +82,7 @@ steps:
     cmd: >-
       python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
       --student mnv4_s --protocol split --epochs 20 --w-oe 0 --workers 2 --out {RUNS}/abl_no_oe &&
-      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_oe --workers 2 --exclude-file {GOVI}/audit/near_dup_exclusions.csv
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_oe --workers 2 --exclude-file {IN}/audit/near_dup_exclusions.csv
     done: "{RUNS}/abl_no_oe/report.json"
   - id: abl_no_margin
     gpu: true
@@ -89,7 +90,7 @@ steps:
     cmd: >-
       python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
       --student mnv4_s --protocol split --epochs 20 --margin 0 --workers 2 --out {RUNS}/abl_no_margin &&
-      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_margin --workers 2 --exclude-file {GOVI}/audit/near_dup_exclusions.csv
+      python scripts/eval_student.py --data-root {DATA} --run {RUNS}/abl_no_margin --workers 2 --exclude-file {IN}/audit/near_dup_exclusions.csv
     done: "{RUNS}/abl_no_margin/report.json"
 
   # ---------------------------------------------------------------- cross-dataset (leave-one-dataset-out)
@@ -105,19 +106,28 @@ steps:
     gpu: false
     hours: 0.2
     always: true
-    cmd: python scripts/clean_reports.py --data-root {DATA} --govi {GOVI}
+    cmd: python scripts/clean_reports.py --data-root {DATA} --govi {GOVI} --inputs {IN}
     done: "{GOVI}/logs/never"
   - id: tables
     gpu: false
     hours: 0.05
     always: true
-    cmd: python scripts/make_tables.py --govi {GOVI} --out {GOVI}/results
+    cmd: python scripts/make_tables.py --govi {GOVI} --out {GOVI}/results --extra-runs {GOVI}-team1/runs {GOVI}-team2/runs {GOVI}-team3/runs
     done: "{GOVI}/logs/never"
+
+# Who runs what when several people share the work (scripts/pipeline.py --team NAME, notebook TEAM = 'NAME').
+# Each list is about 3-3.5 GPU hours on a free T4. The owner (TEAM = '') runs every step not finished yet,
+# so anything a team member could not finish is picked up later. Results land in MyDrive/govi-ai-<team>/runs.
+teams:
+  main:  [student_main, bundle_v1, officer_loop, xai, lodo_chili_kim_korea]
+  team1: [abl_no_kd, abl_no_oe]
+  team2: [abl_no_margin, lodo_paddy_doctor, lodo_chili_bd_8814]
+  team3: [lodo_rice_bangladesh, lodo_csd_assam, lodo_tealeafbd]
 
 # Template for `lodo:` steps (expanded by scripts/pipeline.py).
 lodo_template:
   cmd: >-
     python scripts/train_student.py --data-root {DATA} --features {FEATS} --teacher dinov2_b clip_b16
     --student mnv4_s --protocol lodo_{SRC} --epochs 15 --workers 2 --out {RUNS}/lodo_{SRC} &&
-    python scripts/eval_student.py --data-root {DATA} --run {RUNS}/lodo_{SRC} --workers 2 --exclude-file {GOVI}/audit/near_dup_exclusions.csv
+    python scripts/eval_student.py --data-root {DATA} --run {RUNS}/lodo_{SRC} --workers 2 --exclude-file {IN}/audit/near_dup_exclusions.csv
   done: "{RUNS}/lodo_{SRC}/report.json"

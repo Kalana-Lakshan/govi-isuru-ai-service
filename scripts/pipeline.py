@@ -6,6 +6,10 @@ results to Drive and is skipped once its `done` file exists; training resumes fr
     python scripts/pipeline.py --data-root /content/data --govi /content/drive/MyDrive/govi-ai --hours 3.5
     python scripts/pipeline.py --govi ... --status          # what is done / next
 
+Team mode (several people, each on their own Colab account): shared inputs are read from --inputs (the
+owner's govi-ai folder, shared read-only) and results go to --govi (the person's own team folder); --team
+picks that person's steps from the `teams:` section of the plan.
+
 A log per step goes to {GOVI}/logs/<step>.log and a summary to {GOVI}/logs/pipeline_status.json, which
 Google Drive for desktop syncs back to the PC.
 """
@@ -25,8 +29,12 @@ import yaml
 REPO = Path(__file__).resolve().parents[1]
 
 
+def load_plan(path: Path) -> dict:
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
 def load_steps(path: Path, ctx: dict) -> list[dict]:
-    cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
+    cfg = load_plan(path)
     out = []
     for s in cfg["steps"]:
         s = dict(s)
@@ -38,6 +46,23 @@ def load_steps(path: Path, ctx: dict) -> list[dict]:
         s["done"] = s["done"].format(**ctx)
         out.append(s)
     return out
+
+
+def team_dirs(govi: Path) -> list[Path]:
+    """The owner's sibling team folders (govi-ai-team1, ...), where team members' results land."""
+    return sorted(govi.parent.glob(govi.name + "-team*"))
+
+
+def is_done(step: dict, govi: Path, teams: list[Path]) -> bool:
+    """Done here, or (for the owner) already done by a team member in their team folder."""
+    done = Path(step["done"])
+    if done.exists():
+        return True
+    try:
+        rel = done.relative_to(govi)
+    except ValueError:
+        return False
+    return any((t / rel).exists() for t in teams)
 
 
 def has_gpu() -> bool:
@@ -81,16 +106,29 @@ def main() -> None:
     ap.add_argument("--plan", type=Path, default=REPO / "configs" / "pipeline.yaml")
     ap.add_argument("--hours", type=float, default=3.5, help="session budget; no step starts that cannot finish")
     ap.add_argument("--only", nargs="*", help="run just these step ids")
+    ap.add_argument("--inputs", type=Path, help="folder with dataset/, features/, audit/ (default: --govi)")
+    ap.add_argument("--team", help="run the steps assigned to this team member in the plan's `teams:` section")
     ap.add_argument("--status", action="store_true")
     args = ap.parse_args()
 
-    ctx = {"DATA": str(args.data_root), "GOVI": str(args.govi), "FEATS": str(args.govi / "features"),
+    inputs = args.inputs or args.govi
+    ctx = {"DATA": str(args.data_root), "GOVI": str(args.govi), "IN": str(inputs), "FEATS": str(inputs / "features"),
            "RUNS": str(args.govi / "runs")}
     steps = load_steps(args.plan, ctx)
+    teams_done = [] if args.team else team_dirs(args.govi)
+    done = lambda st: is_done(st, args.govi, teams_done)  # noqa: E731
+    if args.team:
+        teams = load_plan(args.plan).get("teams", {})
+        if args.team not in teams:
+            sys.exit(f"unknown team {args.team!r}; choose one of {sorted(teams)}")
+        mine = set(teams[args.team])
+        # a team member runs only their steps (plus the per-session summary steps)
+        steps = [s for s in steps if s["id"] in mine or s.get("always")]
+        print(f"team {args.team}: {sorted(mine)}")
     gpu = has_gpu()
     if args.status:
         for s in steps:
-            mark = "*" if s.get("always") else ("x" if Path(s["done"]).exists() else " ")
+            mark = "*" if s.get("always") else ("x" if done(s) else " ")
             print(f"[{mark}] {s['id']:24s} gpu={s.get('gpu', False)}  ~{s.get('hours')} h")
         return
 
@@ -100,12 +138,12 @@ def main() -> None:
     for s in steps:
         if args.only and s["id"] not in args.only:
             continue
-        if s.get("always") or Path(s["done"]).exists():
+        if s.get("always") or done(s):
             continue
         if s.get("gpu") and not gpu:
             print(f"[skip] {s['id']} needs a GPU runtime")
             continue
-        waiting = [n for n in s.get("needs", []) if n in by_id and not Path(by_id[n]["done"]).exists()]
+        waiting = [n for n in s.get("needs", []) if n in by_id and not done(by_id[n])]
         if waiting:
             print(f"[wait] {s['id']} needs {', '.join(waiting)} to finish first")
             continue
@@ -125,7 +163,7 @@ def main() -> None:
             rc = run_step(s, args.govi)
             (ran if rc == 0 else failed).append(s["id"])
     write_status(args.govi, steps, {"running": None, "gpu": gpu, "last_session": {"ran": ran, "failed": failed}})
-    remaining = [s["id"] for s in steps if not Path(s["done"]).exists() and not s.get("always")]
+    remaining = [s["id"] for s in steps if not done(s) and not s.get("always")]
     print(f"\nsession done. ran={ran} failed={failed}\nremaining={remaining}")
     sys.exit(1 if failed else 0)
 

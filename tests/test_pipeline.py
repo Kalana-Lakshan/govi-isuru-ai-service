@@ -103,3 +103,49 @@ def test_needs_waits_for_prerequisite(tmp_path):
     r = _run(tmp_path, plan)
     assert "[wait] bundle needs train" in r.stdout
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def _team_plan(tmp: Path) -> Path:
+    p = tmp / "team_plan.yaml"
+    p.write_text(textwrap.dedent(f"""
+        steps:
+          - {{id: shared, gpu: false, hours: 0.1, cmd: '{PY} -c "print(1)"', done: "{{IN}}/shared.done"}}
+          - id: a
+            gpu: false
+            hours: 0.1
+            cmd: {PY} -c "import os; os.makedirs(r'{{RUNS}}/a', exist_ok=True); open(r'{{RUNS}}/a/report.json','w').write('1')"
+            done: "{{RUNS}}/a/report.json"
+          - id: b
+            gpu: false
+            hours: 0.1
+            cmd: {PY} -c "import os; os.makedirs(r'{{RUNS}}/b', exist_ok=True); open(r'{{RUNS}}/b/report.json','w').write('1')"
+            done: "{{RUNS}}/b/report.json"
+        teams:
+          team1: [b]
+    """), encoding="utf-8")
+    return p
+
+
+def test_team_member_runs_only_their_steps_into_their_folder(tmp_path):
+    owner = tmp_path / "govi-ai"
+    team = tmp_path / "govi-ai-team1"
+    owner.mkdir(); team.mkdir()
+    (owner / "shared.done").write_text("1")
+    plan = _team_plan(tmp_path)
+    r = subprocess.run([sys.executable, str(REPO / "scripts" / "pipeline.py"), "--govi", str(team), "--inputs", str(owner),
+                        "--team", "team1", "--plan", str(plan), "--data-root", str(tmp_path / "data")],
+                       capture_output=True, text=True, cwd=REPO)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (team / "runs" / "b" / "report.json").exists()
+    assert not (team / "runs" / "a").exists() and not (owner / "runs").exists()
+
+    # The owner now sees b as done (it is in the team folder) and runs only a.
+    r2 = _run(owner, plan)
+    assert "=== a ===" in r2.stdout and "=== b ===" not in r2.stdout, r2.stdout
+    assert "[x] b" in _run(owner, plan, "--status").stdout
+
+
+def test_unknown_team_is_rejected(tmp_path):
+    (tmp_path / "runs").mkdir()
+    r = _run(tmp_path, _team_plan(tmp_path), "--team", "team9")
+    assert r.returncode != 0 and "unknown team" in (r.stdout + r.stderr)

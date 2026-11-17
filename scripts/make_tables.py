@@ -50,6 +50,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--govi", type=Path, required=True)
     ap.add_argument("--out", type=Path, default=Path("docs/results"))
+    ap.add_argument("--extra-runs", type=Path, nargs="*", default=[],
+                    help="more runs/ folders (team members' results); missing folders are skipped")
     args = ap.parse_args()
     G = args.govi
     args.out.mkdir(parents=True, exist_ok=True)
@@ -95,8 +97,11 @@ def main() -> None:
         js["probes"] = rows
 
     # ---- student runs
-    runs = G / "runs"
-    reps = {d.name: (load(d / "report.json"), load(d / "report_clean.json")) for d in sorted(runs.iterdir())} if runs.exists() else {}
+    run_dirs = [d for root in [G / "runs", *args.extra_runs] if root.exists() for d in sorted(root.iterdir()) if d.is_dir()]
+    reps = {}
+    for d in run_dirs:  # the first finished copy of a run wins (owner's folder first)
+        if d.name not in reps or reps[d.name][0] is None:
+            reps[d.name] = (load(d / "report.json"), load(d / "report_clean.json"))
     main_run = reps.get("mnv4_s_split", (None, None))
     if main_run[0]:
         rows = [[c, *crop_cells(main_run[0], c)] for c in CROPS]

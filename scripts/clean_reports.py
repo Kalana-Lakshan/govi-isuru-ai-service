@@ -17,8 +17,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-root", type=Path, required=True)
     ap.add_argument("--govi", type=Path, required=True)
+    ap.add_argument("--inputs", type=Path, help="folder holding audit/ (default: --govi)")
     args = ap.parse_args()
-    excl = args.govi / "audit" / "near_dup_exclusions.csv"
+    excl = (args.inputs or args.govi) / "audit" / "near_dup_exclusions.csv"
     if not excl.exists():
         print("no near-duplicate audit yet; nothing to do")
         return
