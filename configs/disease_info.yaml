@@ -3,48 +3,453 @@
 # generates advice; empty fields are returned empty. Cite the source of every advice text.
 #   si / ta      Sinhala / Tamil display names
 #   advice_en / advice_si / advice_ta   short, actionable advice (2-4 sentences)
+#   description_en, severity (none/low/medium/high)   shown with a diagnosis
 #   source       e.g. 'DOA Rice Research and Development Institute, 2025 guide'
+# Entries marked 'Govi Isuru v1 app content' were carried over from the previous app (names, description,
+# treatment steps) so farmers keep seeing advice; an agronomist must still review them and fill the rest.
 crops:
   rice:
-    healthy: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    bacterial_leaf_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    bacterial_leaf_streak: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    bacterial_panicle_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    blast: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    brown_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    narrow_brown_leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    leaf_scald: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    sheath_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    downy_mildew: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    tungro: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    hispa: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    dead_heart: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    leaffolder: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    leaf_smut: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    healthy:
+      si: නිරෝගී වී පත්‍රය
+      ta: ''
+      advice_en: |-
+        Continue good agricultural practices
+        Monitor regularly for early disease detection
+        Maintain proper water management
+        Apply balanced fertilization
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: The leaf is healthy with no signs of disease.
+      severity: none
+    bacterial_leaf_blight:
+      si: බැක්ටීරියා පත්‍ර අංගමාරය
+      ta: ''
+      advice_en: |-
+        Use certified disease-free seeds
+        Apply copper-based bactericides
+        Drain fields and avoid excessive nitrogen
+        Remove and destroy infected plant debris
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Caused by Xanthomonas oryzae. Yellow to white lesions along leaf veins.
+      severity: high
+    bacterial_leaf_streak:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    bacterial_panicle_blight:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    blast:
+      si: පත්‍ර පිපිරුම් රෝගය
+      ta: ''
+      advice_en: |-
+        Apply Tricyclazole or Isoprothiolane fungicide
+        Use resistant rice varieties (BG 250, BG 300)
+        Avoid excessive nitrogen fertilizer
+        Maintain proper plant spacing
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Caused by Magnaporthe oryzae. Diamond-shaped lesions with gray centers.
+      severity: high
+    brown_spot:
+      si: දුඹුරු පුල්ලි රෝගය
+      ta: ''
+      advice_en: |-
+        Apply fungicides like Mancozeb or Carbendazim
+        Use balanced fertilizers (avoid nitrogen excess)
+        Ensure proper seed treatment before planting
+        Maintain field hygiene
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Fungal disease causing oval brown spots with gray centers on leaves.
+      severity: medium
+    narrow_brown_leaf_spot:
+      si: පටු දුඹුරු පත්‍ර ලප රෝගය
+      ta: ''
+      advice_en: |-
+        Apply Mancozeb or Zineb fungicides
+        Use balanced potassium fertilization
+        Ensure proper drainage
+        Remove crop residues after harvest
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Linear brown lesions on leaves caused by Cercospora oryzae.
+      severity: medium
+    leaf_scald:
+      si: පත්‍ර පිළිස්සුම් රෝගය
+      ta: ''
+      advice_en: |-
+        Apply fungicides at early infection stage
+        Remove infected plant residues
+        Use disease-free seeds
+        Avoid water stress conditions
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Fungal disease with zonate lesions starting from leaf tips.
+      severity: medium
+    sheath_blight:
+      si: කොපු අංගමාරය
+      ta: ''
+      advice_en: |-
+        Apply Validamycin or Hexaconazole fungicide
+        Reduce plant density and nitrogen
+        Ensure proper field drainage
+        Remove sclerotia from field after harvest
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Fungal disease with irregular grayish-green lesions on sheaths.
+      severity: high
+    downy_mildew:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    tungro:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    hispa:
+      si: වී හිස්පා පළිබෝධය
+      ta: ''
+      advice_en: |-
+        Apply Chlorpyrifos or Carbofuran insecticide
+        Remove grassy weeds from field borders
+        Use light traps to monitor adult population
+        Clip and destroy affected leaf tips
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Insect pest causing white streaks by scraping leaf surface.
+      severity: medium
+    dead_heart:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    leaffolder:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    leaf_smut:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
   tea:
-    healthy: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    blister_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    brown_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    gray_blight: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    red_rust: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    algal_leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    red_leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    helopeltis: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    red_spider_mite: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    green_mirid_bug: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    anthracnose: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    bird_eye_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    white_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    red_scab: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    healthy:
+      si: නිරෝගී තේ පත්‍රය
+      ta: ''
+      advice_en: |-
+        Continue regular monitoring for early disease detection
+        Maintain good agricultural practices
+        Apply balanced NPK fertilization
+        Ensure proper irrigation management
+        Practice integrated pest management
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: The tea leaf is healthy with no signs of disease. Good dark green color with proper texture.
+      severity: none
+    blister_blight:
+      si: බිබිලි අංගමාරය
+      ta: ''
+      advice_en: |-
+        Apply copper-based fungicides like Bordeaux mixture
+        Remove and destroy infected leaves
+        Improve air circulation by proper pruning
+        Avoid overhead irrigation during wet weather
+        Apply systemic fungicides like Hexaconazole
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Caused by Exobasidium vexans fungus. White to pink blisters appear on young leaves, turning brown as they age.
+      severity: high
+    brown_blight:
+      si: දුඹුරු අංගමාරය
+      ta: ''
+      advice_en: |-
+        Apply fungicides containing Carbendazim
+        Prune and remove infected branches
+        Maintain proper drainage in tea fields
+        Apply balanced fertilization
+        Use copper oxychloride spray preventively
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Caused by Colletotrichum camelliae. Brown necrotic patches appear on mature leaves, often with concentric rings.
+      severity: medium
+    gray_blight:
+      si: අළු අංගමාරය
+      ta: ''
+      advice_en: |-
+        Apply Mancozeb or Copper fungicides
+        Remove infected plant material
+        Maintain optimal plant spacing
+        Avoid waterlogging in fields
+        Apply preventive sprays during monsoon
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Caused by Pestalotiopsis species. Gray spots with dark margins appear on leaves, leading to defoliation.
+      severity: medium
+    red_rust:
+      si: රතු මළ රෝගය
+      ta: ''
+      advice_en: |-
+        Apply copper-based fungicides
+        Improve air circulation through pruning
+        Remove heavily infected leaves
+        Apply lime sulfur spray
+        Maintain proper shade management
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Caused by Cephaleuros parasiticus algae. Orange-red rusty patches appear on upper leaf surface.
+      severity: medium
+    algal_leaf_spot:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    red_leaf_spot:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    helopeltis:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    red_spider_mite:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    green_mirid_bug:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    anthracnose:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    bird_eye_spot:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    white_spot:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    red_scab:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
   chili:
-    healthy: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    leaf_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    powdery_mildew: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    leaf_curl: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    mites_thrips: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    nutrient_deficiency: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    yellow_leaf_virus: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    bacterial_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    broad_bean_wilt_virus: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    flood_stress: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
-    white_spot: {si: '', ta: '', advice_en: '', advice_si: '', advice_ta: '', source: ''}
+    healthy:
+      si: නිරෝගී මිරිස් පත්‍රය
+      ta: ''
+      advice_en: |-
+        Continue regular monitoring for early disease detection
+        Maintain balanced fertilization (NPK 10-10-10)
+        Ensure proper irrigation without waterlogging
+        Practice crop rotation to prevent soil-borne diseases
+        Apply preventive neem oil spray monthly
+        Monitor for early signs of pest infestation
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: The chili plant is healthy with no visible signs of disease or pest damage. Leaves show good green color with proper texture and no spots or discoloration.
+      severity: none
+    leaf_spot:
+      si: පත්‍ර පුල්ලි රෝගය
+      ta: ''
+      advice_en: |-
+        Apply copper-based fungicides (Copper Oxychloride)
+        Remove and destroy infected leaves immediately
+        Apply Mancozeb or Chlorothalonil fungicides
+        Maintain proper plant spacing for air circulation
+        Avoid overhead irrigation to reduce leaf wetness
+        Apply neem oil spray as organic alternative
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Leaf spot disease (Bercak Daun) is caused by fungal pathogens like Cercospora and Alternaria. Circular to irregular brown spots with dark margins appear on leaves, leading to defoliation.
+      severity: medium
+    powdery_mildew:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    leaf_curl:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    mites_thrips:
+      si: තිරිප්ස් කෘමි හානිය
+      ta: ''
+      advice_en: |-
+        Apply systemic insecticides like Imidacloprid or Spinosad
+        Use blue or yellow sticky traps to monitor populations
+        Spray neem oil or insecticidal soap for organic control
+        Remove heavily infested plant parts
+        Apply Fipronil granules to soil for systemic protection
+        Introduce natural predators like minute pirate bugs
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Thrips are tiny insects that feed on chili leaves causing silvery streaks, curling, and distortion. Heavy infestation leads to stunted growth and reduced yield.
+      severity: high
+    nutrient_deficiency:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    yellow_leaf_virus:
+      si: කහ පැහැ වෛරස් රෝගය
+      ta: ''
+      advice_en: |-
+        Remove and destroy infected plants immediately
+        Control whitefly vectors with Imidacloprid or Thiamethoxam
+        Use reflective mulches to repel whiteflies
+        Install insect-proof netting in nurseries
+        Apply neem-based products to control vectors
+        Plant resistant varieties if available
+        Avoid planting near infected fields
+      advice_si: ''
+      advice_ta: ''
+      source: Govi Isuru v1 app content (2025); pending agronomist review
+      description_en: Yellow virus disease (Gemini virus/Leaf Curl Virus) is transmitted by whiteflies. Causes yellowing, curling, and stunting of leaves. Severely affects plant growth and fruit production.
+      severity: high
+    bacterial_spot:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    broad_bean_wilt_virus:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    flood_stress:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''
+    white_spot:
+      si: ''
+      ta: ''
+      advice_en: ''
+      advice_si: ''
+      advice_ta: ''
+      source: ''
+      description_en: ''
+      severity: ''

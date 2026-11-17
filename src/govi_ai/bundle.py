@@ -33,6 +33,8 @@ def class_catalog(tax: Taxonomy, info_path: Path | None = None) -> dict:
                 "type": c.type, "status": c.status,
                 "name": {"en": c.en, "si": c.si or extra.get("si", ""), "ta": c.ta or extra.get("ta", "")},
                 "advice": {lang: extra.get(f"advice_{lang}", "") for lang in ("en", "si", "ta")},
+                "description": {"en": extra.get("description_en", "")},
+                "severity": extra.get("severity") or None,
                 "advice_source": extra.get("source", ""),
             }
     return out
