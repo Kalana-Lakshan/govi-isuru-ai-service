@@ -139,7 +139,22 @@ def main() -> None:
                table(["held-out source", "crop", "macro-F1", "macro-F1 near-dup-free", "AUROC unknown"], rows), ""]
 
     # ---- deployment, audit, officer loop, XAI
-    bundle = load(G / "bundles" / "v1" / "bundle_report.json")
+    bundle = load(G / "bundles" / "v2" / "bundle_report.json") or load(G / "bundles" / "v1" / "bundle_report.json")
+    cal = (bundle or {}).get("calibration", {})
+    rows = []
+    for c, r in cal.items():
+        if c == "gate" or not isinstance(r, dict):
+            continue
+        loco = r.get("novelty_loco_auroc_val") or {}
+        rows.append([c, r.get("novelty_score", "mahalanobis"), loco.get("mahalanobis"), loco.get("msp"), loco.get("fused"),
+                     r.get("test_unknown_auroc"), r.get("unknown_disease_detected"), r.get("test_known_flagged_unknown"),
+                     r.get("test_coverage"), r.get("test_risk_on_accepted")])
+    if rows:
+        md += ["## Serving decisions (calibrated on validation; test shown)",
+               table(["crop", "unknown score", "LOCO AUROC maha", "LOCO msp", "LOCO fused", "test AUROC unknown",
+                      "unknowns caught", "known flagged unknown", "answered (coverage)", "error when answered"], rows),
+               "", "Unknown score chosen per crop by leave-one-known-class-out AUROC on validation; unknown and test "
+               "data are never used for any choice.", ""]
     if bundle:
         rows = [[k, g(bundle, k, "argmax_agreement", "gate"), g(bundle, k, "latency_ms_1thread", "p50"),
                  g(bundle, k, "latency_ms_1thread", "p95")] for k in ("model.onnx", "model.int8.onnx") if k in bundle]

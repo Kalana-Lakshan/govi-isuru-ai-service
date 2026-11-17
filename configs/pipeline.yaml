@@ -52,6 +52,15 @@ steps:
       python scripts/build_bundle.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/bundles/v1 --version v1
       --yield-dir {IN}/tabular/yield --suitability-dir {IN}/tabular/suitability --quality {IN}/tabular/quality.json
     done: "{GOVI}/bundles/v1/bundle_report.json"
+  - id: bundle_v2
+    needs: [student_main]
+    gpu: false
+    hours: 0.4
+    # per-crop unknown-disease score (leave-one-class-out on validation) + risk/coverage options
+    cmd: >-
+      python scripts/build_bundle.py --data-root {DATA} --run {RUNS}/mnv4_s_split --out {GOVI}/bundles/v2 --version v2
+      --yield-dir {IN}/tabular/yield --suitability-dir {IN}/tabular/suitability --quality {IN}/tabular/quality.json
+    done: "{GOVI}/bundles/v2/bundle_report.json"
 
   # ---------------------------------------------------------------- paper analyses on the main model
   - id: officer_loop
@@ -119,7 +128,7 @@ steps:
 # Each list is about 3-3.5 GPU hours on a free T4. The owner (TEAM = '') runs every step not finished yet,
 # so anything a team member could not finish is picked up later. Results land in MyDrive/govi-ai-<team>/runs.
 teams:
-  main:  [student_main, bundle_v1, officer_loop, xai, lodo_chili_kim_korea]
+  main:  [student_main, bundle_v1, bundle_v2, officer_loop, xai]
   team1: [abl_no_kd, abl_no_oe]
   team2: [abl_no_margin, lodo_paddy_doctor, lodo_chili_bd_8814]
   team3: [lodo_rice_bangladesh, lodo_csd_assam, lodo_tealeafbd]

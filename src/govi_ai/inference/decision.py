@@ -39,6 +39,10 @@ class CropCalibration:
     unknown_threshold: float    # Mahalanobis score below this -> UNKNOWN_DISEASE
     low_conf_threshold: float   # calibrated max prob below this -> LOW_CONFIDENCE
     head_weights: np.ndarray | None = None  # K×D normalised cosine weights (for CAM)
+    # Which score decides UNKNOWN_DISEASE for this crop (chosen per crop at calibration time):
+    #   "mahalanobis" (default, threshold = unknown_threshold), "msp" or "fused" (z-scored sum of both).
+    # `unknown_threshold` always stays the Mahalanobis threshold: it decides officer-prototype matches.
+    novelty: dict = field(default_factory=lambda: {"score": "mahalanobis"})
     proto_labels: list[str] = field(default_factory=list)  # one label per row of `means`
     proto_origin: list[str] = field(default_factory=list)  # "trained" | "officer"
 
@@ -50,6 +54,23 @@ class CropCalibration:
     def distances(self, emb: np.ndarray) -> np.ndarray:
         d = self.means - emb[None, :]
         return np.einsum("kd,de,ke->k", d, self.precision, d)
+
+    def novelty_score(self, maha_score: float, msp: float) -> tuple[float, float]:
+        """(score, threshold) for the configured novelty score; low score = unknown."""
+        return novelty_value(self.novelty, maha_score, msp, self.unknown_threshold)
+
+
+def novelty_value(cfg: dict, maha_score, msp, maha_threshold: float):
+    """Vectorised helper shared by serving and calibration. Returns (score, threshold)."""
+    kind = cfg.get("score", "mahalanobis")
+    if kind == "mahalanobis":
+        return maha_score, maha_threshold
+    if kind == "msp":
+        return msp, cfg["threshold"]
+    if kind == "fused":
+        z = (np.asarray(maha_score) - cfg["maha_mu"]) / cfg["maha_sd"] + (np.asarray(msp) - cfg["msp_mu"]) / cfg["msp_sd"]
+        return z, cfg["threshold"]
+    raise ValueError(f"unknown novelty score {kind!r}")
 
 
 @dataclass
@@ -70,7 +91,8 @@ class DecisionBundle:
         for name, c in self.crops.items():
             cfg["crops"][name] = {"classes": c.classes, "temperature": c.temperature,
                                   "unknown_threshold": c.unknown_threshold, "low_conf_threshold": c.low_conf_threshold,
-                                  "proto_labels": c.proto_labels, "proto_origin": c.proto_origin}
+                                  "proto_labels": c.proto_labels, "proto_origin": c.proto_origin,
+                                  "novelty": c.novelty}
             arrays = {"means": c.means.astype(np.float32), "precision": c.precision.astype(np.float32)}
             if c.head_weights is not None:
                 arrays["head_weights"] = c.head_weights.astype(np.float32)
@@ -89,7 +111,8 @@ class DecisionBundle:
                 precision=z["precision"].astype(np.float64), unknown_threshold=c["unknown_threshold"],
                 low_conf_threshold=c["low_conf_threshold"],
                 head_weights=z["head_weights"] if "head_weights" in z else None,
-                proto_labels=c.get("proto_labels", []), proto_origin=c.get("proto_origin", []))
+                proto_labels=c.get("proto_labels", []), proto_origin=c.get("proto_origin", []),
+                novelty=c.get("novelty", {"score": "mahalanobis"}))
         return cls(cfg["gate_classes"], cfg["gate_temperature"], cfg["gate_min_conf"], crops,
                    cfg.get("version", "dev"), cfg.get("meta", {}))
 
@@ -131,16 +154,18 @@ class DecisionBundle:
         maha_score = float(-dist[nearest])
         top = np.argsort(-probs)[:3]
         top3 = [{"class": cal.classes[i], "probability": round(float(probs[i]), 4)} for i in top]
+        score, threshold = cal.novelty_score(maha_score, float(probs[top[0]]))
         base = {"crop": detected, "gate": gate_info, "top3": top3,
-                "novelty": {"mahalanobis_score": maha_score, "threshold": cal.unknown_threshold,
+                "novelty": {"score": cal.novelty.get("score", "mahalanobis"), "value": float(score),
+                            "threshold": float(threshold), "mahalanobis_score": maha_score,
                             "nearest_prototype": cal.proto_labels[nearest]}}
 
-        if maha_score < cal.unknown_threshold:
-            return {"status": "UNKNOWN_DISEASE", **base}
-        if cal.proto_origin[nearest] == "officer":
+        if cal.proto_origin[nearest] == "officer" and maha_score >= cal.unknown_threshold:
             # An officer-registered disease the network head has never been trained on.
             return {"status": "KNOWN_DISEASE", "class": cal.proto_labels[nearest], "source": "officer_prototype",
                     "confidence": None, **base}
+        if score < threshold:
+            return {"status": "UNKNOWN_DISEASE", **base}
         if probs[top[0]] < cal.low_conf_threshold:
             return {"status": "LOW_CONFIDENCE", "reason": "disease_uncertain", **base}
         return {"status": "KNOWN_DISEASE", "class": cal.classes[top[0]], "source": "model",
