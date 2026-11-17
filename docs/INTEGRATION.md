@@ -6,8 +6,7 @@ directly. The full contract is in [`openapi.json`](openapi.json); interactive do
 ## 1. Run it
 
 ```bash
-# today, before the trained model exists: a development bundle (random weights, real yield/suitability)
-python scripts/make_dev_bundle.py --out bundle
+# the trained serving bundle is committed in ./bundle (version in bundle/decision.json)
 GOVI_API_KEY=change-me docker compose up --build        # -> http://localhost:8000
 ```
 

@@ -13,7 +13,8 @@ venv/
 /data/
 /artifacts/
 /runs/
-/bundle/
+# /bundle/ is the shipped serving bundle (committed); other bundle outputs stay local
+/bundle_*/
 wandb/
 mlruns/
 *.keras

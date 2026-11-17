@@ -44,7 +44,7 @@ weights will be published to the Hugging Face Hub and pulled when the service im
 | 3 | Student: hierarchical open-set CNN, knowledge distillation | **code ready** (notebook 03) |
 | 4 | Calibration, prototype library, decision logic | **code ready** (`build_bundle.py`) |
 | 5 | ONNX INT8 export + parity check | **code ready** (`build_bundle.py`) |
-| 6 | FastAPI service, Docker, OpenAPI contract, photo-quality gate, unknown clustering, metrics | **done** (`service/`, `docs/INTEGRATION.md`, dev bundle) |
+| 6 | FastAPI service, Docker, OpenAPI contract, photo-quality gate, unknown clustering, metrics | **done** (`service/`, `docs/INTEGRATION.md`, trained bundle v1.1 in `bundle/`) |
 | 7 | Yield (real DCS data) + suitability (FAO ECOCROP + ERA5 climate, EcoCrop model) | **done** (served) |
 | 8 | Evaluations, ablations, near-duplicate audit, officer-loop and XAI experiments, results tables | **code ready**, running on Colab via `00_colab_runner.ipynb` |
 

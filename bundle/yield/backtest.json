@@ -1,0 +1,31 @@
+{
+  "source": "Department of Census and Statistics, Sri Lanka (https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/)",
+  "built": "2026-11-15",
+  "unit": "kg per net hectare",
+  "interval": "80 % (empirically calibrated in the rolling backtest)",
+  "n": 795,
+  "years": [
+    2010,
+    2026
+  ],
+  "gbm": {
+    "mae_kg_ha": 446.3687015642785,
+    "mape": 0.12222115512406506,
+    "interval_80": {
+      "coverage": 0.5974842767295597,
+      "mean_width_kg_ha": 887.3236298536299
+    }
+  },
+  "climatology_5yr_mean": {
+    "mae_kg_ha": 436.41425365803764,
+    "mape": 0.12009270008146967,
+    "interval_80": {
+      "coverage": 0.7949685534591195,
+      "mean_width_kg_ha": 1418.9128242019178
+    }
+  },
+  "last_year": {
+    "mae_kg_ha": 493.3483915020407,
+    "mape": 0.13452486249075488
+  }
+}

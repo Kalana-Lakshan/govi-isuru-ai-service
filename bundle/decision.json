@@ -1,0 +1,177 @@
+{
+  "version": "v1.1",
+  "gate_classes": [
+    "rice",
+    "tea",
+    "chili",
+    "other_plant",
+    "non_plant"
+  ],
+  "gate_temperature": 1.0,
+  "gate_min_conf": 0.865220844745636,
+  "meta": {
+    "protocol": "split",
+    "known_tpr": 0.95,
+    "target_risk": 0.05,
+    "gate_keep": 0.99,
+    "student": "mnv4_s",
+    "timm_id": "mobilenetv4_conv_small.e2400_r224_in1k",
+    "trained_epoch": 24,
+    "composition": {
+      "base": "G:\\My Drive\\govi-ai\\bundles\\v1",
+      "changes": [
+        {
+          "crop": "tea",
+          "novelty": "msp",
+          "from": "G:/My Drive/govi-ai/bundles/v2"
+        },
+        {
+          "crop": "rice",
+          "low_conf_threshold": 0.7619736790657043,
+          "was": 0.8617154955863953,
+          "validation_coverage": 0.7,
+          "validation_risk": 0.07224118316268491
+        }
+      ]
+    }
+  },
+  "crops": {
+    "rice": {
+      "classes": [
+        "healthy",
+        "bacterial_leaf_blight",
+        "bacterial_leaf_streak",
+        "bacterial_panicle_blight",
+        "blast",
+        "brown_spot",
+        "narrow_brown_leaf_spot",
+        "leaf_scald",
+        "sheath_blight",
+        "downy_mildew",
+        "tungro",
+        "hispa",
+        "dead_heart",
+        "leaffolder"
+      ],
+      "temperature": 1.7782794100389228,
+      "unknown_threshold": -2397.856612011506,
+      "low_conf_threshold": 0.7619736790657043,
+      "proto_labels": [
+        "healthy",
+        "bacterial_leaf_blight",
+        "bacterial_leaf_streak",
+        "bacterial_panicle_blight",
+        "blast",
+        "brown_spot",
+        "narrow_brown_leaf_spot",
+        "leaf_scald",
+        "sheath_blight",
+        "downy_mildew",
+        "tungro",
+        "hispa",
+        "dead_heart",
+        "leaffolder"
+      ],
+      "proto_origin": [
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained"
+      ]
+    },
+    "tea": {
+      "classes": [
+        "healthy",
+        "blister_blight",
+        "brown_blight",
+        "gray_blight",
+        "red_rust",
+        "algal_leaf_spot",
+        "red_leaf_spot",
+        "helopeltis",
+        "red_spider_mite",
+        "green_mirid_bug"
+      ],
+      "temperature": 1.7782794100389228,
+      "unknown_threshold": -2367.6409708407814,
+      "low_conf_threshold": 0.3419254422187805,
+      "proto_labels": [
+        "healthy",
+        "blister_blight",
+        "brown_blight",
+        "gray_blight",
+        "red_rust",
+        "algal_leaf_spot",
+        "red_leaf_spot",
+        "helopeltis",
+        "red_spider_mite",
+        "green_mirid_bug"
+      ],
+      "proto_origin": [
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained"
+      ],
+      "novelty": {
+        "score": "msp",
+        "maha_mu": -966.2108793235811,
+        "maha_sd": 1066.9985427988227,
+        "msp_mu": 0.9590325355529785,
+        "msp_sd": 0.10356736928224564,
+        "threshold": 0.7344517111778259
+      }
+    },
+    "chili": {
+      "classes": [
+        "healthy",
+        "leaf_spot",
+        "powdery_mildew",
+        "leaf_curl",
+        "mites_thrips",
+        "nutrient_deficiency",
+        "yellow_leaf_virus",
+        "bacterial_spot"
+      ],
+      "temperature": 1.584893192461114,
+      "unknown_threshold": -3194.431180756975,
+      "low_conf_threshold": 0.23501956462860107,
+      "proto_labels": [
+        "healthy",
+        "leaf_spot",
+        "powdery_mildew",
+        "leaf_curl",
+        "mites_thrips",
+        "nutrient_deficiency",
+        "yellow_leaf_virus",
+        "bacterial_spot"
+      ],
+      "proto_origin": [
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained",
+        "trained"
+      ]
+    }
+  }
+}

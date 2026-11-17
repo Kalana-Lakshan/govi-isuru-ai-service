@@ -3,7 +3,7 @@ name: Docker image
 on:
   push:
     branches: [main]
-    paths: ["src/**", "service/**", "pyproject.toml", ".github/workflows/docker.yml"]
+    paths: ["src/**", "service/**", "bundle/**", "pyproject.toml", ".github/workflows/docker.yml"]
   workflow_dispatch:
 
 permissions:
@@ -17,11 +17,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Build a development bundle (random weights, CPU torch)
+      - name: Check the shipped bundle
         run: |
-          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
-          pip install -e ".[train]"
-          python scripts/make_dev_bundle.py --out bundle --img-size 224
+          pip install numpy pillow
+          test -f bundle/model.int8.onnx && test -f bundle/decision.json
+          python -c "import json; print('bundle version', json.load(open('bundle/decision.json'))['version'])"
       - name: Build image
         run: docker build -f service/Dockerfile -t govi-ai-service:ci .
       - name: Run and check memory / endpoints
@@ -41,7 +41,7 @@ jobs:
                                        headers={"X-API-Key": "ci", "Content-Type": f"multipart/form-data; boundary={boundary}"})
           r = json.loads(urllib.request.urlopen(req).read())
           print(r["status"], r["latency_ms"], r["model"])
-          assert "warning" in r["model"]
+          assert "warning" not in r["model"], "the shipped bundle must be the trained model"
           EOF
           docker stats --no-stream --format "{{.Name}} mem={{.MemUsage}}" ai
           docker images govi-ai-service:ci --format "image size={{.Size}}"

@@ -1,0 +1,79 @@
+{
+  "built": "2026-11-15",
+  "crop_source": "FAO ECOCROP database (via github.com/OpenCLIM/ecocrop EcoCrop_DB.csv)",
+  "climate_source": "ERA5 reanalysis 1995-2024 via Open-Meteo archive API (CC BY 4.0), temperature downscaled to a 90 m DEM",
+  "crops": {
+    "rice": {
+      "crop": "rice",
+      "scientific_name": "Oryza sativa",
+      "perennial": false,
+      "params": {
+        "PHOPMX": 7.0,
+        "ROPMN": 1500.0,
+        "PHMIN": 4.5,
+        "TMAX": 36.0,
+        "PHOPMN": 5.5,
+        "ROPMX": 2000.0,
+        "TMIN": 10.0,
+        "RMAX": 4000.0,
+        "PHMAX": 9.0,
+        "TOPMX": 30.0,
+        "RMIN": 1000.0,
+        "TOPMN": 20.0
+      },
+      "drainage_opt": "poorly (saturated >50% of year)",
+      "drainage_abs": "poorly (saturated >50% of year)",
+      "texture_opt": "wide",
+      "texture_abs": "wide",
+      "max_altitude_m": 2500.0
+    },
+    "tea": {
+      "crop": "tea",
+      "scientific_name": "Camellia sinensis",
+      "perennial": true,
+      "params": {
+        "PHOPMX": 5.5,
+        "ROPMN": 1400.0,
+        "PHMIN": 4.0,
+        "TMAX": 35.0,
+        "PHOPMN": 4.5,
+        "ROPMX": 2000.0,
+        "TMIN": 8.0,
+        "RMAX": 5000.0,
+        "PHMAX": 6.0,
+        "TOPMX": 30.0,
+        "RMIN": 1000.0,
+        "TOPMN": 20.0
+      },
+      "drainage_opt": "well (dry spells)",
+      "drainage_abs": "well (dry spells), excessive (dry/moderately dry)",
+      "texture_opt": "heavy, medium, light",
+      "texture_abs": "heavy, medium, light",
+      "max_altitude_m": 2200.0
+    },
+    "chili": {
+      "crop": "chili",
+      "scientific_name": "Capsicum annuum",
+      "perennial": false,
+      "params": {
+        "PHOPMX": 6.8,
+        "ROPMN": 600.0,
+        "PHMIN": 4.5,
+        "TMAX": 35.0,
+        "PHOPMN": 5.5,
+        "ROPMX": 1250.0,
+        "TMIN": 8.0,
+        "RMAX": 1700.0,
+        "PHMAX": 7.0,
+        "TOPMX": 30.0,
+        "RMIN": 500.0,
+        "TOPMN": 17.0
+      },
+      "drainage_opt": "well (dry spells)",
+      "drainage_abs": "well (dry spells)",
+      "texture_opt": "medium, organic",
+      "texture_abs": "medium, light",
+      "max_altitude_m": 3000.0
+    }
+  }
+}

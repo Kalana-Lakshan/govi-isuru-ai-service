@@ -1,0 +1,86 @@
+{
+ "calibration": {
+  "gate": {
+   "temperature": 1.0,
+   "min_conf": 0.865220844745636
+  },
+  "rice": {
+   "temperature": 1.7782794100389228,
+   "unknown_threshold": -2397.856612011506,
+   "low_conf_threshold": 0.8617154955863953,
+   "test_known_flagged_unknown": 0.045436428856117976,
+   "test_coverage": 0.6058190514149063,
+   "test_risk_on_accepted": 0.04078947368421049,
+   "test_macro_f1": 0.7834447687335612,
+   "unknown_disease_detected": 0.8
+  },
+  "tea": {
+   "temperature": 1.7782794100389228,
+   "unknown_threshold": -2367.6409708407814,
+   "low_conf_threshold": 0.3419254422187805,
+   "test_known_flagged_unknown": 0.0486198243412798,
+   "test_coverage": 0.9507528230865746,
+   "test_risk_on_accepted": 0.045859452325965,
+   "test_macro_f1": 0.9487779248228124,
+   "unknown_disease_detected": 0.15126050420168066
+  },
+  "chili": {
+   "temperature": 1.584893192461114,
+   "unknown_threshold": -3194.431180756975,
+   "low_conf_threshold": 0.23501956462860107,
+   "test_known_flagged_unknown": 0.04739652870493992,
+   "test_coverage": 0.9526034712950601,
+   "test_risk_on_accepted": 0.023826208829712647,
+   "test_macro_f1": 0.932907404540952,
+   "unknown_disease_detected": 0.04699121027721433
+  }
+ },
+ "files": {
+  "model.onnx_mb": 5.17,
+  "model.int8.onnx_mb": 1.58
+ },
+ "model.onnx": {
+  "argmax_agreement": {
+   "gate": 1.0,
+   "rice": 1.0,
+   "tea": 1.0,
+   "chili": 1.0
+  },
+  "gate_max_abs_diff": 8.58306884765625e-06,
+  "latency_ms_1thread": {
+   "p50": 5.2984864996687975,
+   "p95": 6.657872249843422
+  }
+ },
+ "model.int8.onnx": {
+  "argmax_agreement": {
+   "gate": 0.599609375,
+   "rice": 0.1328125,
+   "tea": 0.142578125,
+   "chili": 0.14453125
+  },
+  "gate_max_abs_diff": 17.177350997924805,
+  "latency_ms_1thread": {
+   "p50": 5.9775765002996195,
+   "p95": 7.51324380025835
+  }
+ },
+ "version": "v1.1",
+ "composition": {
+  "base": "G:\\My Drive\\govi-ai\\bundles\\v1",
+  "changes": [
+   {
+    "crop": "tea",
+    "novelty": "msp",
+    "from": "G:/My Drive/govi-ai/bundles/v2"
+   },
+   {
+    "crop": "rice",
+    "low_conf_threshold": 0.7619736790657043,
+    "was": 0.8617154955863953,
+    "validation_coverage": 0.7,
+    "validation_risk": 0.07224118316268491
+   }
+  ]
+ }
+}
