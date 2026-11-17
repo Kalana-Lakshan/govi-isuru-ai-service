@@ -8,7 +8,7 @@
                                photos (thresholds from ``coverage_options_val`` in ``--report``).
 * ``--low-conf CROP=VALUE``    or set the threshold directly.
 
-The FP32 ``model.onnx`` is not copied (the service only loads ``model.int8.onnx``). Every change is recorded in
+Only one network file is shipped: FP32 ``model.onnx`` by default (``--model int8`` for the smaller one). Every change is recorded in
 ``decision.json`` (meta.composition) and ``bundle_report.json``.
 """
 
@@ -19,7 +19,7 @@ import json
 import shutil
 from pathlib import Path
 
-SKIP = {"model.onnx", "desktop.ini", "decision.json", "bundle_report.json"}
+SKIP = {"desktop.ini", "decision.json", "bundle_report.json"}
 
 
 def pairs(items: list[str]) -> dict[str, str]:
@@ -51,6 +51,8 @@ def main() -> None:
     ap.add_argument("--coverage", nargs="*", default=[])
     ap.add_argument("--low-conf", nargs="*", default=[])
     ap.add_argument("--report", type=Path, help="bundle_report.json with coverage_options_val (for --coverage)")
+    ap.add_argument("--model", choices=["fp32", "int8"], default="fp32",
+                    help="which network file to ship (FP32 matches the calibration exactly)")
     args = ap.parse_args()
 
     base = json.loads((args.base / "decision.json").read_text(encoding="utf-8"))
@@ -81,8 +83,9 @@ def main() -> None:
         changes.append({"crop": crop, "low_conf_threshold": float(val), "was": old})
 
     args.out.mkdir(parents=True, exist_ok=True)
+    drop = "model.int8.onnx" if args.model == "fp32" else "model.onnx"
     for f in args.base.iterdir():
-        if f.name in SKIP:
+        if f.name in SKIP or f.name == drop:
             continue
         dest = args.out / f.name
         if f.is_dir():

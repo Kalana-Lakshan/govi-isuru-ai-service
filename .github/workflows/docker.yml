@@ -20,7 +20,7 @@ jobs:
       - name: Check the shipped bundle
         run: |
           pip install numpy pillow
-          test -f bundle/model.int8.onnx && test -f bundle/decision.json
+          test -f bundle/model.onnx && test -f bundle/decision.json
           python -c "import json; print('bundle version', json.load(open('bundle/decision.json'))['version'])"
       - name: Build image
         run: docker build -f service/Dockerfile -t govi-ai-service:ci .

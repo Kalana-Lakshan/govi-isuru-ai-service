@@ -99,7 +99,7 @@ def test_engine_predict(bundle_dir):
     r = eng.predict(_jpeg(), crop="rice", return_embedding=True)
     assert r["status"] in {"KNOWN_DISEASE", "UNKNOWN_DISEASE", "LOW_CONFIDENCE", "WRONG_CROP",
                            "UNSUPPORTED_PLANT", "NOT_A_PLANT"}
-    assert r["model"]["file"] == "model.int8.onnx" and r["latency_ms"] > 0
+    assert r["model"]["file"] == "model.onnx" and r["latency_ms"] > 0
     emb = np.frombuffer(base64.b64decode(r["embedding_f16_base64"]), dtype=np.float16)
     assert emb.shape == (eng.decision.crops["rice"].means.shape[1],)
     with pytest.raises(InvalidImage):

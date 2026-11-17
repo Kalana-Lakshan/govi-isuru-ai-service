@@ -9,7 +9,7 @@ DINOv2 + CLIP), then composed with `scripts/compose_bundle.py`:
 
 | File | Contents |
 |---|---|
-| `model.int8.onnx` | the network, INT8 (1.6 MB) |
+| `model.onnx` | the network, FP32 (5.2 MB). INT8 (1.6 MB) changed ~6 % of disease answers on real test photos, so it is not shipped |
 | `decision.json`, `prototypes_*.npz` | calibration: temperatures, thresholds, class prototypes (see `meta.composition`) |
 | `classes.json` | disease names (en/si/ta), type, advice (from `configs/disease_info.yaml`) |
 | `yield/`, `suitability/` | DCS paddy forecasts and history; FAO EcoCrop requirements and ERA5 district climate |

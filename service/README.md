@@ -12,7 +12,7 @@ docker build -f service/Dockerfile -t govi-ai-service .
 docker run -p 8000:8000 -e GOVI_API_KEY=change-me -v govi-state:/app/state govi-ai-service
 ```
 
-Only `model.int8.onnx` is shipped (the FP32 `model.onnx` is excluded by `.dockerignore`).
+The service loads `model.onnx` (FP32, what the thresholds were calibrated on); set `GOVI_MODEL_FILE=model.int8.onnx` to use an INT8 model instead.
 Officer-registered prototypes are written to `/app/state`; mount a volume there to keep them.
 
 ## API (all `/v1` routes need `X-API-Key` when `GOVI_API_KEY` is set)

@@ -11,6 +11,7 @@ A *bundle* directory contains:
 from __future__ import annotations
 
 import base64
+import os
 import io
 import json
 import time
@@ -77,7 +78,10 @@ class Engine:
         self.crops: list[str] = pre["crops"]
         self.decision = DecisionBundle.load(d)
         if model_file is None:
-            model_file = "model.int8.onnx" if (d / "model.int8.onnx").exists() else "model.onnx"
+            # FP32 by default: thresholds are calibrated on FP32 outputs, and INT8 changed ~6 % of disease
+            # answers on real test photos. GOVI_MODEL_FILE=model.int8.onnx picks the smaller model instead.
+            model_file = os.getenv("GOVI_MODEL_FILE") or (
+                "model.onnx" if (d / "model.onnx").exists() else "model.int8.onnx")
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = threads
         opts.inter_op_num_threads = 1
