@@ -1,6 +1,6 @@
 # Govi Isuru AI service: slim CPU image (no torch, no tensorflow).
 # Build from the repo root, with the serving bundle at ./bundle (model.int8.onnx + decision files):
-#   docker build -f service/Dockerfile -t govi-ai-service .
+#   docker build -t govi-ai-service .
 #   docker run -p 8000:8000 -e GOVI_API_KEY=change-me -v govi-state:/app/state govi-ai-service
 
 FROM python:3.12-slim AS build

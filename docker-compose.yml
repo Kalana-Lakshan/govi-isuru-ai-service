@@ -6,7 +6,7 @@ services:
   ai-service:
     build:
       context: .
-      dockerfile: service/Dockerfile
+      dockerfile: Dockerfile
     image: govi-ai-service:latest
     ports:
       - "8000:8000"

@@ -8,7 +8,7 @@ fastapi, uvicorn, pydantic): no torch, TensorFlow, pandas or scikit-learn.
 ```bash
 # The trained serving bundle is committed in ./bundle (rebuild: scripts/build_bundle.py, then
 # scripts/compose_bundle.py). From the repo root:
-docker build -f service/Dockerfile -t govi-ai-service .
+docker build -t govi-ai-service .
 docker run -p 8000:8000 -e GOVI_API_KEY=change-me -v govi-state:/app/state govi-ai-service
 ```
 

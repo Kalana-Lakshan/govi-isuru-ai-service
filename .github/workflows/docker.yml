@@ -23,7 +23,7 @@ jobs:
           test -f bundle/model.onnx && test -f bundle/decision.json
           python -c "import json; print('bundle version', json.load(open('bundle/decision.json'))['version'])"
       - name: Build image
-        run: docker build -f service/Dockerfile -t govi-ai-service:ci .
+        run: docker build -t govi-ai-service:ci .
       - name: Run and check memory / endpoints
         run: |
           docker run -d --name ai -p 8000:8000 -e GOVI_API_KEY=ci --memory 512m govi-ai-service:ci
