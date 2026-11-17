@@ -112,7 +112,7 @@ steps:
     gpu: false
     hours: 0.05
     always: true
-    cmd: python scripts/make_tables.py --govi {GOVI} --out {GOVI}/results --extra-runs {GOVI}-team1/runs {GOVI}-team2/runs {GOVI}-team3/runs
+    cmd: python scripts/make_tables.py --govi {GOVI} --out {GOVI}/results --extra-runs {GOVI}-team1/runs {GOVI}-team2/runs {GOVI}-team3/runs {GOVI}-team4/runs
     done: "{GOVI}/logs/never"
 
 # Who runs what when several people share the work (scripts/pipeline.py --team NAME, notebook TEAM = 'NAME').
@@ -123,6 +123,7 @@ teams:
   team1: [abl_no_kd, abl_no_oe]
   team2: [abl_no_margin, lodo_paddy_doctor, lodo_chili_bd_8814]
   team3: [lodo_rice_bangladesh, lodo_csd_assam, lodo_tealeafbd]
+  team4: [lodo_chili_kim_korea]
 
 # Template for `lodo:` steps (expanded by scripts/pipeline.py).
 lodo_template:
