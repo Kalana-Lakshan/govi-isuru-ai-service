@@ -23,6 +23,7 @@ mlruns/
 *.pth
 *.ckpt
 *.onnx
+!/bundle/model.int8.onnx
 *.safetensors
 *.joblib
 *.pkl
